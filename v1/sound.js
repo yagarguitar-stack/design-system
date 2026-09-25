@@ -33,7 +33,8 @@
   function use(o){o=o||{};if(o.context){ctx=o.context;out=o.output||null;if(!out){out=ctx.createGain();out.gain.value=0.8;out.connect(ctx.destination);}}else if(o.output){ac();out=o.output;}}
   function ac(){
     if(!ctx){var C=window.AudioContext||window.webkitAudioContext;ctx=new C();out=ctx.createGain();out.gain.value=0.8;out.connect(ctx.destination);}
-    if(ctx.state==='suspended')ctx.resume();
+    /* 書き出し専用の器（OfflineAudioContext）は再開できないので触らない */
+    if(ctx.state==='suspended'&&!(window.OfflineAudioContext&&ctx instanceof OfflineAudioContext)){try{var r=ctx.resume();if(r&&r.catch)r.catch(function(){});}catch(e){}}
     return ctx;
   }
   /* スマホでは最初のタップまで音が出せないため、最初の操作で準備する */
