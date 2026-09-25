@@ -1,0 +1,8 @@
+/* yagarguitar-stack 共通デザイン v1 — フォント */
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@700&display=swap');
+:root{
+  --font-sign:"Rye",serif;                                          /* 英字の看板 */
+  --font-head:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif; /* 日本語の見出し */
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif; /* 本文・札 */
+
+}
