@@ -25,6 +25,7 @@
   var NS='http://www.w3.org/2000/svg';
   var VALS=[[W,'w'],[H,'h'],[Q,'q'],[E,'8'],[S,'16'],[T32,'32']];
   var LEVEL={'8':1,'16':2,'32':3};
+  var tuId=0;   // 連符のまとまりの番号
 
   function near(a,b){return Math.abs(a-b)<0.51;}
   /* 見た目の長さ → 記号と付点 */
@@ -57,13 +58,13 @@
       var m=/^(\d+)\/(\d+)(?::([\d+]+))?$/.exec(k);
       if(m){ts=[+m[1],+m[2]];groups=m[3]?m[3].split('+').map(Number):null;if(cur&&!cur.notes.length){cur.ts=ts.slice();cur.groups=groups;}continue;}
       m=/^(\d+)(?::(\d+))?$/.exec(k);
-      if(m&&toks[i+1]==='('){tu={n:+m[1],in:m[2]?+m[2]:defIn(+m[1])};i++;continue;}
+      if(m&&toks[i+1]==='('){tu={n:+m[1],in:m[2]?+m[2]:defIn(+m[1]),id:++tuId};i++;continue;}
       if(k===')'){tu=null;continue;}
       m=/^(w|h|q|8|16|32)(\.{0,2})(r?)(~?)(>?)$/.exec(k);
       if(!m){errors.push('読めない書き方：'+k);continue;}
       var base={w:W,h:H,q:Q,'8':E,'16':S,'32':T32}[m[1]],len=base*(m[2]==='.'?1.5:m[2]==='..'?1.75:1);
       var n={len:len,rest:!!m[3],tie:!!m[4],accent:!!m[5]};
-      if(tu){n.len=len*tu.in/tu.n;n.tu={n:tu.n,in:tu.in};}
+      if(tu){n.len=len*tu.in/tu.n;n.tu={n:tu.n,in:tu.in,id:tu.id};}
       bar().notes.push(n);
     }
     return {bars:bars,errors:errors};
@@ -95,7 +96,7 @@
     /* 連符の細かさ：拍ごとに1つの連符。拍をまたいで伸ばす音はタイでつなぐ */
     var carry=false;
     for(var bb=0;bb<nb;bb++){var bar={ts:ts.slice(),groups:groups,notes:[]};bars.push(bar);
-      for(var bt=0;bt<ts[0];bt++){var base=bb*perBar+bt*div,k=0;
+      for(var bt=0;bt<ts[0];bt++){var base=bb*perBar+bt*div,k=0;tuplet={n:div,in:defIn(div),id:++tuId};
         while(k<div){var hit=!!pattern[base+k],j=k+1;
           if(hit||(hold&&carry&&k===0)){while(j<div&&!pattern[base+j]&&hold)j++;
             if(!hit){var prev=findPrev(bars);if(prev)prev.tie=true;}
@@ -117,7 +118,8 @@
 
   /* ───────── 描ける形に整える（拍・小節の中央で分けてタイ） ───────── */
   var PIECES=[W*1.5,W,H*1.75,H*1.5,H,Q*1.75,Q*1.5,Q,E*1.5,E,S*1.5,S,T32];
-  function normalize(score){
+  function normalize(score,o){
+    o=o||{};var split=!!(o.splitBeats||score.splitBeats);
     var errors=(score.errors||[]).slice(),out=[],abs=0;
     score.bars.forEach(function(bar,bi){
       var ts=bar.ts||[4,4],L=barLen(ts),gs=beatGroups(ts,bar.groups),edges=[0],t=0,evs=[];
@@ -137,7 +139,8 @@
         if(whole){evs.push({start:s,len:n.len,rest:true,wholeBar:true,sh:{b:'w',dots:0,unit:W},src:ni});st=e;return;}
         var aligned=edges.some(function(x){return near(x,s);});   // 拍の頭から始まる音は、形があればそのまま（付点4分など）
         var mid=(ts[0]===4&&ts[1]===4)?H:-1;
-        var okWhole=aligned&&shape(n.len)&&!(mid>0&&s<mid-0.5&&e>mid+0.5&&!near(s,0));
+        var nextEdge=null;edges.forEach(function(x){if(nextEdge==null&&x>s+0.5)nextEdge=x;});
+        var okWhole=aligned&&shape(n.len)&&!(mid>0&&s<mid-0.5&&e>mid+0.5&&!near(s,0))&&!(split&&nextEdge!=null&&e>nextEdge+0.5);   // splitBeats：拍ごとに必ず分ける
         if(okWhole)parts.push([s,e]);
         else{var p=s;cuts.forEach(function(c){if(c>p+0.5&&c<e-0.5){parts.push([p,c]);p=c;}});parts.push([p,e]);}
         var pieces=[];
@@ -172,7 +175,7 @@
   function render(target,input,o){
     o=o||{};style();
     var sc=typeof input==='string'?parse(input):(input&&input.bars?input:{bars:input||[]});
-    var N=normalize(sc);
+    var N=normalize(sc,{splitBeats:o.splitBeats});
     var sp=o.sp||9,mode=o.spacing||'time',staff=o.staff==null?1:o.staff;
     var box=typeof target==='string'?document.getElementById(target):target;
     var maxW=o.width||(box&&box.clientWidth)||640;
@@ -238,9 +241,11 @@
       // 連符のまとまり
       var tg=null,tgs=[];
       evs.forEach(function(ev){if(!ev.tu){tg=null;return;}
-        if(!tg||tg.done||tg.n!==ev.tu.n||tg.in!==ev.tu.in){tg={n:ev.tu.n,in:ev.tu.in,list:[],sum:0,span:ev.sh.unit*ev.tu.in};tgs.push(tg);}  // 例：3連8分は 8分×2 の時間
-        tg.list.push(ev);ev.tg=tg;tg.sum+=ev.len;
-        if(tg.sum>=tg.span-0.5)tg.done=true;});
+        var same=tg&&!tg.done&&tg.n===ev.tu.n&&tg.in===ev.tu.in&&(ev.tu.id==null||tg.id===ev.tu.id);
+        if(!same){tg={n:ev.tu.n,in:ev.tu.in,id:ev.tu.id,list:[]};tgs.push(tg);}
+        tg.list.push(ev);ev.tg=tg;
+        // 番号の無い連符は、拍の頭で区切る
+        if(ev.tu.id==null&&bar.edges.some(function(x){return near(x,ev.start+ev.len);}))tg.done=true;});
       evs.forEach(function(ev){var beam=!ev.rest&&LEVEL[ev.sh.b],gi=ev.tg?'t'+tgs.indexOf(ev.tg):grp(ev.start);
         if(beam&&cur&&cur.gi===gi){cur.list.push(ev);}else{cur=beam?{gi:gi,list:[ev]}:null;if(cur)runs.push(cur);}});
       runs=runs.filter(function(r){return r.list.length>1;});
@@ -359,5 +364,7 @@
   }
 
   DS.rhythm={version:'1.0',T:{WHOLE:W,HALF:H,QUARTER:Q,EIGHTH:E,SIXTEENTH:S,THIRTYSECOND:T32},
-    parse:parse,fromGrid:fromGrid,normalize:normalize,render:render,play:play};
+    parse:parse,fromGrid:fromGrid,normalize:normalize,render:render,play:play,
+    shape:shape,   // 見た目の長さ → {b:記号, dots:付点の数}。描けない長さは null
+    newTupletId:function(){return ++tuId;}};
 })();
