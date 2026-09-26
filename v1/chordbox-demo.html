@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>コードの押さえ方の図 — 見本</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="scale.css">
+<style>
+  body{font-family:var(--font-body,sans-serif);margin:0;padding:16px;max-width:980px;margin-inline:auto;line-height:1.7;background:#faf7f0;color:#2a2420}
+  h1{font-family:var(--font-head,serif);font-size:1.4rem}
+  h2{font-family:var(--font-head,serif);font-size:1.1rem;margin-top:28px;border-bottom:1px solid #d8cfc0}
+  input,select,button{font:inherit;padding:6px 10px;border:1px solid #bfb3a0;border-radius:6px;background:#fff}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:10px}
+  .grid.h{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+  .card{text-align:center}
+  .card .box{display:flex;justify-content:center}
+  .tag{font-size:.8rem;color:#6b5d50}
+  .tag b{font-weight:normal;padding:0 6px;border-radius:4px;margin-right:4px}
+  .tag .t{background:#e7dcc6}.tag .s{background:#dde6ea}
+  .err{color:#a03020}
+  .note{font-size:.85rem;color:#6b5d50}
+</style></head><body>
+<h1>コードの押さえ方の図（chordbox.js）の見本</h1>
+<p class="note">図を叩くと鳴ります（丸や○はその弦だけ、ほかの所は全部）。</p>
+
+<div class="row">
+  <label>向き <select id="orient"><option value="v">縦</option><option value="h">横（1弦が上）</option></select></label>
+  <label>見た目 <select id="look"><option value="book">教本風</option><option value="paper">白い紙＋度数の色</option><option value="ebony">指板そのまま</option></select></label>
+  <label>丸の中 <select id="label"><option value="note">音名</option><option value="finger">指番号</option><option value="deg">度数</option><option value="none">なし</option></select></label>
+</div>
+
+<h2>コード名から探す</h2>
+<div class="row"><input id="cin" value="C" size="14">（例：Am7・G/B・D/F♯・C7(13)・F♯m7(♭5)）
+  <label>数 <select id="max"><option>6</option><option selected>12</option><option>24</option></select></label></div>
+<div id="cmsg"></div>
+<div class="grid" id="cout"></div>
+
+<h2>押さえ方を直接</h2>
+<div class="row">押さえ <input id="sin" value="x32010" size="18"> 指番号 <input id="fin" value="" size="10" placeholder="空なら自動"> コード名 <input id="nin" value="" size="8" placeholder="空なら当てる"></div>
+<div id="smsg"></div>
+<div class="grid" id="sout"></div>
+
+<script src="theory.js"></script>
+<script src="sound.js"></script>
+<script src="chordbox.js"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  if(!window.DS||!DS.chordbox){document.body.insertAdjacentHTML('afterbegin','<p class="err">chordbox.js を読み込めませんでした。同じフォルダに置いてください。</p>');return;}
+  var CB=DS.chordbox;
+  function base(){return {orient:$('orient').value,look:$('look').value,label:$('label').value};}
+  function card(host,shape,opts,tag){
+    var d=document.createElement('div');d.className='card';
+    var b=document.createElement('div');b.className='box';d.appendChild(b);
+    if(tag){var t=document.createElement('div');t.className='tag';t.innerHTML=tag;d.appendChild(t);}
+    host.appendChild(d);CB.mount(b,shape,opts);
+  }
+  function byName(){
+    var o=base(),host=$('cout');host.innerHTML='';host.className='grid'+(o.orient==='h'?' h':'');
+    var list=CB.find($('cin').value,{max:+$('max').value});
+    if(!list.length){$('cmsg').innerHTML='<p class="err">押さえ方が出せませんでした（コード名が読めない時など）</p>';return;}
+    $('cmsg').innerHTML='';
+    list.forEach(function(s){
+      var tag=s.from==='table'?'<b class="t">表</b>'+(s.label||''):'<b class="s">探した形</b>';
+      if(s.omit) tag+='（'+s.omit.join('・')+' を省略）';
+      card(host,s,o,tag);
+    });
+  }
+  function direct(){
+    var o=base(),host=$('sout');host.innerHTML='';host.className='grid'+(o.orient==='h'?' h':'');
+    var s=CB.parse($('sin').value,{fingers:$('fin').value.trim()||null});
+    if(!s){$('smsg').innerHTML='<p class="err">押さえ方が読めません。6弦から順に、例：x32010 や 10-12-12-11-10-10</p>';return;}
+    $('smsg').innerHTML='';
+    if($('nin').value.trim()) o.chord=$('nin').value.trim();
+    card(host,s,o,'指番号：'+s.fingers.map(function(f,i){return s.frets[i]<0?'x':f;}).join(''));
+  }
+  function all(){byName();direct();}
+  ['orient','look','label','max'].forEach(function(id){$(id).onchange=all;});
+  ['cin'].forEach(function(id){$(id).oninput=byName;});
+  ['sin','fin','nin'].forEach(function(id){$(id).oninput=direct;});
+  all();
+})();
+</script>
+</body></html>
