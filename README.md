@@ -163,3 +163,15 @@ DS.rhythm.render(el, score);
 - clock.js が読めない時も、中の小さな刻みで鳴ります（画面の裏では途切れることがあります）
 
 見本：rhythm-demo.html（sound.js・clock.js と同じフォルダで開く）
+（リズム譜の節の「render の設定」の表に、次の行を足してください）
+
+| `beatGuides` | `true` で拍の区切りに点線（色は CSS の `--ds-rhy-guide`） |
+| `beamGroup` | `'beat'`＝1拍ずつ（初期）／`'half'`＝8分だけのときは2拍ずつ（4/4・2/4 など） |
+| `beams` | `false` で連桁を付けず旗で描く |
+| `split` | `false` で拍をまたぐ音も分けない（形が描ける長さならそのまま。出題用） |
+| `timeSig` | `false` で拍子記号を出さない |
+| `beatWidth` | 時間に比例のときの、4分音符1つぶんの幅（px） |
+
+- 音に `ref`（元の番号）を付けて渡すと、`v.byRef(番号)` でその音の記号の位置（`x`・`y0`）が分かります。飾りを後から足すときに使います
+- 音に `hidden:true` を付けると、場所だけ取って描きません（小節の足りない分を空けておくときなど）
+- 版は 1.1 です（`DS.rhythm.version`）
