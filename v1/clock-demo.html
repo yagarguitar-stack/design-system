@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>拍を刻む仕組み — 見本</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  body{font-family:var(--font-body,sans-serif);margin:0;padding:16px;max-width:640px;margin-inline:auto;line-height:1.7;background:#faf7f0;color:#2a2420}
+  h1{font-family:var(--font-head,serif);font-size:1.4rem}
+  h2{font-family:var(--font-head,serif);font-size:1.1rem;margin-top:24px;border-bottom:1px solid #d8cfc0}
+  label{display:block;margin:6px 0}
+  select,button,input{font:inherit;padding:6px 10px;border:1px solid #bfb3a0;border-radius:6px;background:#fff}
+  button{min-width:7em}
+  .dots{display:flex;gap:10px;margin:16px 0;flex-wrap:wrap}
+  .dot{width:34px;height:34px;border-radius:50%;background:#e6ddcc;transition:background .05s}
+  .dot.on{background:#c07a2a}.dot.on.top{background:#a03020}
+  #tap{width:100%;height:90px;font-size:1.2rem;margin-top:8px}
+  .note{font-size:.9rem;color:#6b5f52}
+  .err{color:#a03020}
+</style></head><body>
+<h1>拍を刻む仕組み（clock.js）の見本</h1>
+
+<label>テンポ <input id="bpm" type="range" min="40" max="240" value="100"> <span id="bpmv">100</span></label>
+<label>拍子 <select id="meter"><option value="4/4">4/4</option><option value="3/4">3/4</option><option value="6/8">6/8</option><option value="7/8">7/8（2+2+3）</option></select></label>
+<label>細かさ <select id="div"><option value="1">4分</option><option value="2">8分</option><option value="3">3連</option><option value="4">16分</option></select></label>
+<label>跳ね <input id="swing" type="range" min="50" max="75" value="50"> <span id="swv">50</span>％（50＝まっすぐ、67＝3連）</label>
+<label>カウントイン <select id="ci"><option value="0">なし</option><option value="1" selected>1小節</option><option value="2">2小節</option></select></label>
+<button id="go">スタート</button>
+
+<div class="dots" id="dots"></div>
+
+<h2>タップのずれ</h2>
+<button id="tap">音に合わせてタップ</button>
+<p id="tapv">—</p>
+
+<h2>端末の遅れの測定</h2>
+<p class="note">4分のクリックに合わせて10回タップしてください。最初の2回は数えません。測った値は、同じサイトのほかのツールでも使われます。</p>
+<button id="cal">測定する</button> <span id="calv"></span>
+
+<script src="sound.js"></script>
+<script src="clock.js"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  if(!window.DS||!DS.clock){document.body.insertAdjacentHTML('afterbegin','<p class="err">clock.js を読み込めませんでした。同じフォルダに置いてください。</p>');return;}
+  var M={'4/4':{meter:[4,4]},'3/4':{meter:[3,4]},'6/8':{meter:[6,8],groups:[3,3]},'7/8':{meter:[7,8],groups:[2,2,3]}};
+  var c=DS.clock.create({bpm:100,meter:[4,4],countIn:1}), mode='play', taps=[];
+  function dots(){var n=c.get().meter[0];$('dots').innerHTML=new Array(n+1).join('<div class="dot"></div>');}
+  function showCal(){var d=DS.clock.latency.get();$('calv').textContent=d?'いまの値：'+(d.ms>0?'+':'')+d.ms+'ms（'+d.date+(d.from?'・'+d.from+'で測定':'')+'）':'まだ測っていません';}
+  c.on('draw',function(p){
+    var ds=$('dots').children; if(!p.head) return;
+    for(var i=0;i<ds.length;i++) ds[i].classList.toggle('on',i===p.beat);
+    if(ds[p.beat]) ds[p.beat].classList.toggle('top',p.level===2);
+  });
+  $('bpm').oninput=function(){$('bpmv').textContent=this.value;c.set({bpm:+this.value});};
+  $('swing').oninput=function(){$('swv').textContent=this.value;c.set({swing:+this.value});};
+  $('div').onchange=function(){c.set({div:+this.value});};
+  $('ci').onchange=function(){c.set({countIn:+this.value});};
+  $('meter').onchange=function(){var m=M[this.value];c.set({meter:m.meter,groups:m.groups||null});setTimeout(dots,0);};
+  $('go').onclick=function(){
+    if(c.get().running){c.stop();this.textContent='スタート';return;}
+    mode='play';dots();c.start();this.textContent='ストップ';
+  };
+  $('tap').onpointerdown=function(e){
+    if(!c.get().running) return;
+    var r=c.judge(e,{grid:mode==='cal'?'beat':'sub',latency:mode==='cal'?0:undefined});
+    if(!r) return;
+    if(mode==='cal'){
+      taps.push(r.diff);$('calv').textContent='あと'+(10-taps.length)+'回';
+      if(taps.length>=10){
+        c.stop();c.set(back);$('go').textContent='スタート';mode='play';
+        var res=DS.clock.latency.fromTaps(taps);
+        if(res.ok){DS.clock.latency.set(res.ms);showCal();}
+        else $('calv').textContent='測れませんでした（'+res.reason+'）。もう一度お試しください';
+      }
+      return;
+    }
+    $('tapv').textContent=r.countIn?'カウントイン中です':(r.diff===0?'ぴったり':(r.diff>0?r.diff+'ms 遅い':(-r.diff)+'ms 早い'));
+  };
+  var back=null;
+  $('cal').onclick=function(){
+    c.stop();back={div:c.get().div,swing:c.get().swing,countIn:c.get().countIn};
+    c.set({div:1,swing:50,countIn:0});taps=[];mode='cal';dots();c.start();
+    $('go').textContent='ストップ';$('calv').textContent='あと10回';
+  };
+  dots();showCal();
+})();
+</script>
+</body></html>
