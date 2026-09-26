@@ -60,9 +60,16 @@
   function isReady(inst){return !!(bank[inst]&&MAP[inst]&&Object.keys(bank[inst]).length===MAP[inst].length);}
 
   var PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-  /* 'C4'・'F#3'・'Bb2'・60 のどれでも受け付ける（C4＝真ん中のド＝60） */
-  function midi(n){if(typeof n==='number')return n;var m=/^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(n).trim());if(!m)throw new Error('音名が読めません：'+n);
-    return 12+PC[m[1].toUpperCase()]+(m[2]==='#'?1:m[2]==='b'?-1:0)+12*parseInt(m[3],10);}
+  /* 音名 → 番号（C4＝真ん中のド＝60）。60・'C4'・'F#3'・'Bb2' に加えて 'F♯4'・'E♭3'・'C##4'・'B𝄫3' も読む。theory.js があればそちらに任せる */
+  function midi(n){
+    if(typeof n==='number')return n;
+    if(DS.theory&&DS.theory.midi){var v=DS.theory.midi(n);if(v!=null)return v;}
+    var m=/^([A-Ga-g])((?:#|♯|b|♭|x|𝄪|𝄫)*)(-?\d+)$/.exec(String(n).trim());if(!m)throw new Error('音名が読めません：'+n);
+    var a=0,t=m[2].replace(/𝄪/g,'x').replace(/𝄫/g,'bb');
+    for(var i=0;i<t.length;i++){var c=t[i];a+=(c==='#'||c==='♯')?1:(c==='x')?2:-1;}
+    if(Math.abs(a)>2)throw new Error('音名が読めません：'+n);
+    return 12+PC[m[1].toUpperCase()]+a+12*parseInt(m[3],10);
+  }
 
   function voice(buf,off,rate,opt,lv){
     var c=ac(),t=Math.max(opt.time==null?c.currentTime:opt.time,c.currentTime);
