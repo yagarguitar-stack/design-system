@@ -15,15 +15,19 @@
    x＝鳴らさない、0＝開放。指番号は 1＝人差し指 … 4＝小指、0 か x＝押さえない。
 
    ══ 標準の見た目 ══
-   縦向き・教本風（白い紙に黒）・丸の中は音名。
-     orient : 'v'（縦）／'h'（横。1弦が上＝TAB譜・指板の図と同じ）
-     look   : 'book'（教本風）／'paper'（白い紙＋度数の色）／'ebony'（指板そのまま）
-     label  : 'note'（音名）／'finger'（指番号）／'deg'（度数）／'none'
-     title  : true でコード名を上に書く（コードが分かる時は標準で書く）。文字を渡せばその文字
-     names  : 各弦の音名を図の外に書く（標準 true）
-     rows   : 描くフレットの数（標準 5。押さえがはみ出す時は自動で広げる）
-     base   : 一番上（横なら左）のフレット。省くと自動（5フレットまでに収まれば 1＝ナットを描く）
-     hit    : true で、叩ける透明な的（class="cbhit" data-s data-f）を置く
+   日本の歌本・教則本の形：横向き（1弦が上・ナットが左・位置のフレット番号は下）、黒い丸、丸の中は指（人・中・薬・小・親）。
+     orient      : 'h'（横。初期）／'v'（縦。海外のコードブックの形。位置は左に「3fr」）
+     label       : 'finger'（指。初期）／'note'（音名）／'deg'（度数）／'none'（何も書かない）
+     fingerStyle : 'kanji'（人・中・薬・小・親。初期）／'num'（1〜4、親指は T）／'num-oya'（1〜4、親指は「親」）
+     look        : 'book'（歌本の黒。初期）／'paper'（白い紙＋度数の色）／'ebony'（指板そのまま）
+     title       : コード名を上に書く（コードが分かる時は初期で書く）。false で書かない、文字を渡せばその文字
+     names       : true で各弦の音名を図の外に書く（初期は書かない）
+     rows        : 描くフレットの数（初期 4。押さえがはみ出す時は自動で広げる）
+     base        : 一番左（縦なら上）のフレット。省くと自動（4フレットまでに収まれば 1＝ナットを描く）
+     scale       : 大きさ（初期 1.3）
+     hit         : true で、叩ける透明な的（class="cbhit" data-s data-f）を置く
+   セーハは帯1本で描き、指の文字は一番低い弦の側に1つだけ書く。
+   指番号の親指は 'T'（'x32010' の形の文字では T か 親）。親指は内蔵の表と手入力の時だけで、自動では振らない。
 
    ══ 押さえ方の探し方（find）══
    1. 内蔵の表：開放弦を使う定番の形と、6弦・5弦・4弦ルートの動かせる形
@@ -40,20 +44,27 @@
   var G = (typeof window !== 'undefined') ? window : globalThis;
   var DS = G.DS = G.DS || {};
   var STD = [40,45,50,55,59,64];
-  var FONT = "'Zen Kaku Gothic New',-apple-system,'Helvetica Neue',Arial,sans-serif";
+  var FONT = "'Zen Kaku Gothic New','Hiragino Sans','Noto Sans JP','Noto Sans CJK JP','Yu Gothic',-apple-system,'Helvetica Neue',Arial,sans-serif";
   var SHARP = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];     /* theory.js が無い時の綴り（ギター譜の慣用） */
   var DEG = ['R','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
   /* 度数ごとの色（fretboard.js と同じ）：ルート・3度・5度。そのほかは灰 */
   function degColor(iv){ return {0:'#d9493a',3:'#d9a51c',4:'#d9a51c',7:'#4a8fcf'}[iv] || '#8a8680'; }
 
+  /* 見た目。book＝歌本・教則本（初期）／paper＝白い紙＋度数の色／ebony＝指板そのまま */
   var LOOK = {
-    book: {bg:'#ffffff', ink:'#1a1a1a', sub:'#5a5a5a', grid:'#1a1a1a', nut:'#1a1a1a', board:null, fretW:1.2, strW:function(){return 1.2;}, strCol:function(){return '#1a1a1a';},
-           dot:function(){return '#1a1a1a';}, dotText:'#ffffff', bar:'#1a1a1a', barOp:1, mark:'#333333'},
-    paper:{bg:'#faf6ee', ink:'#2a2320', sub:'#6b5d50', grid:'#3a332c', nut:'#2a2320', board:null, fretW:1.2, strW:function(){return 1.2;}, strCol:function(){return '#3a332c';},
-           dot:function(iv){return degColor(iv);}, dotText:'#ffffff', bar:'#7a6a58', barOp:.55, mark:'#5a4d40'},
-    ebony:{bg:'#1d1815', ink:'#e8dccb', sub:'#b8a596', grid:'#cfc6b4', nut:'#efe6d2', board:'#2a2320', fretW:2.4,
-           strW:function(k){return [3.2,2.7,2.2,1.8,1.4,1.1][k];}, strCol:function(k){return k<4?'#c9a24b':'#d4d6d8';},
-           dot:function(iv){return degColor(iv);}, dotText:'#ffffff', bar:'#e8b53a', barOp:.55, mark:'#b8a596'}
+    book: {bg:'#ffffff', ink:'#1a1a1a', sub:'#5a5a5a', grid:'#1a1a1a', board:null, fretW:0.9, strW:function(){return 0.9;}, strCol:function(){return '#1a1a1a';},
+           dot:function(){return '#1a1a1a';}, dotText:'#ffffff', bar:'#1a1a1a', mark:'#1a1a1a'},
+    paper:{bg:'#faf6ee', ink:'#2a2320', sub:'#6b5d50', grid:'#3a332c', board:null, fretW:0.9, strW:function(){return 0.9;}, strCol:function(){return '#3a332c';},
+           dot:function(iv){return degColor(iv);}, dotText:'#ffffff', bar:'#5a4d40', mark:'#3a332c'},
+    ebony:{bg:'#1d1815', ink:'#e8dccb', sub:'#b8a596', grid:'#cfc6b4', board:'#2a2320', fretW:1.8,
+           strW:function(k){return [2.2,1.9,1.6,1.3,1.0,0.8][k];}, strCol:function(k){return k<4?'#c9a24b':'#d4d6d8';},
+           dot:function(iv){return degColor(iv);}, dotText:'#ffffff', bar:'#e8b53a', mark:'#b8a596'}
+  };
+  /* 指の書き方 */
+  var FINGER_TEXT = {
+    kanji:{1:'人',2:'中',3:'薬',4:'小',T:'親'},
+    num:{1:'1',2:'2',3:'3',4:'4',T:'T'},
+    'num-oya':{1:'1',2:'2',3:'3',4:'4',T:'親'}
   };
 
   function T(){ return DS.theory || null; }
@@ -81,7 +92,7 @@
   function readFingers(s, n){
     if(s==null) return null;
     var a = Array.isArray(s) ? s.slice() : splitCells(s);
-    a = a.map(function(c){ return (c==null||/^[xX×\-]$/.test(String(c))) ? 0 : (+c||0); });
+    a = a.map(function(c){ c = String(c==null?'':c); if(/^[tT親]$/.test(c)) return 'T'; return /^[1-4]$/.test(c) ? +c : 0; });
     return a.length===n ? a : null;
   }
   /* どの形で渡されても {frets, fingers, base} にそろえる。読めない時は null */
@@ -200,7 +211,9 @@
     ['G','320003','210003'],['G7','320001','320001'],['GM7','320002','320001'],['G6','320000','210000'],
     ['A','x02220','x01230'],['Am','x02210','x02310'],['A7','x02020','x02030'],['AM7','x02120','x02130'],['Am7','x02010','x02010'],
     ['Asus4','x02230','x01240'],['Asus2','x02200','x01200'],['A7sus4','x02030','x02030'],
-    ['B7','x21202','x21304']
+    ['B7','x21202','x21304'],
+    /* 親指で6弦を押さえる形 */
+    ['D/F#','2x0232','Tx0132'],['F','1x3211','Tx3211'],['FM7','1x3210','Tx3210']
   ];
   /* 動かせる形：ルートの弦ごとに、ルートのフレットからのずれ（x＝鳴らさない）と指番号 */
   var MOVE = {
@@ -233,16 +246,18 @@
     openIndex = {};
     OPEN_SHAPES.forEach(function(r){
       var c = T().chord(r[0]); if(!c) return;
-      var key = c.rootPc+':'+c.type;
-      (openIndex[key] = openIndex[key] || []).push({frets:readFrets(r[1]), fingers:readFingers(r[2],6), from:'table', label:'開放弦'});
+      var key = c.rootPc+':'+c.type+':'+(c.bassPc==null?'':c.bassPc);
+      var fi = readFingers(r[2],6);
+      (openIndex[key] = openIndex[key] || []).push({frets:readFrets(r[1]), fingers:fi, from:'table', label:fi.indexOf('T')>=0?'親指':'開放弦'});
     });
     return openIndex;
   }
   function tableShapes(c, maxFret){
     var out = [];
-    if(!c || c.bass!=null || (c.tensions && c.tensions.length)) return out;   /* 分数コード・足したテンションは探す方で */
+    if(!c || (c.tensions && c.tensions.length)) return out;   /* 足したテンションは探す方で */
     var oi = buildOpenIndex() || {};
-    (oi[c.rootPc+':'+c.type] || []).forEach(function(s){ out.push({frets:s.frets.slice(), fingers:s.fingers.slice(), from:'table', label:s.label}); });
+    (oi[c.rootPc+':'+c.type+':'+(c.bassPc==null?'':c.bassPc)] || []).forEach(function(s){ out.push({frets:s.frets.slice(), fingers:s.fingers.slice(), from:'table', label:s.label}); });
+    if(c.bassPc!=null) return out;                           /* 分数コードの動かせる形は探す方で */
     [0,1,2].forEach(function(rs){
       var m = MOVE[rs][c.type]; if(!m) return;
       var offs = m[0], fing = m[1];
@@ -347,7 +362,7 @@
   function find0(c, opts){
     var max = opts.max || 12, maxF = opts.maxFret || 15, std = !opts.tuning || tuningOf(opts.tuning).join()===STD.join();
     var tab = (opts.table===false || !std) ? [] : tableShapes(c, maxF);
-    tab.sort(function(a,b){ return posOf(a.frets)-posOf(b.frets); });
+    tab.sort(function(a,b){ return (posOf(a.frets)-posOf(b.frets)) || ((a.fingers.indexOf('T')>=0) - (b.fingers.indexOf('T')>=0)); });
     var seen = {}; tab = tab.filter(function(s){ var k=s.frets.join(); if(seen[k]) return false; seen[k]=1; return true; });
     var res = tab.slice();
     if(opts.search!==false){
@@ -387,77 +402,71 @@
     if(typeof x==='string' && shape && shape.chord && !opts.chord) opts = merge(opts,{chord:shape.chord});
     if(!shape) return '';
     shape = parse(shape, opts);
-    var L = LOOK[opts.look] || LOOK.book, hor = opts.orient==='h';
-    var label = opts.label || 'note', n = shape.frets.length;
+    var L = LOOK[opts.look] || LOOK.book, hor = opts.orient!=='v';
+    var label = opts.label || 'finger', FT = FINGER_TEXT[opts.fingerStyle] || FINGER_TEXT.kanji, n = shape.frets.length;
     var cx = context(shape, opts), mids = notesOf(shape, opts);
     var fr = shape.frets, fi = shape.fingers;
     var pressed = fr.filter(function(v){return v>0;});
     var maxF = pressed.length ? Math.max.apply(null,pressed) : 0, minF = pressed.length ? Math.min.apply(null,pressed) : 0;
-    var rows0 = opts.rows || 5;
+    var rows0 = opts.rows || 4;
     var base = opts.base || shape.base || (maxF <= rows0 ? 1 : minF);
     var rows = Math.max(rows0, maxF - base + 1);
     var title = opts.title===false ? '' : (typeof opts.title==='string' ? opts.title : (cx.c ? cx.c.name : ''));
-    var names = opts.names!==false, R = 10.5;
-    var titleH = title ? 30 : 6;
-    var W, H, gx, gy, pt, g = '';
+    var names = !!opts.names, R = 6.8, W, H, pt, mk, g = '';
+    function line(x1,y1,x2,y2,w,col){ return '<line x1="'+f2(x1)+'" y1="'+f2(y1)+'" x2="'+f2(x2)+'" y2="'+f2(y2)+'" stroke="'+col+'" stroke-width="'+w+'"/>'; }
+    function text(x,y,t,sz,w,col,anc){ return '<text x="'+f2(x)+'" y="'+f2(y)+'" font-size="'+sz+'" font-weight="'+(w||400)+'" fill="'+col+'" text-anchor="'+(anc||'middle')+'" font-family="'+FONT+'">'+esc(t)+'</text>'; }
 
-    if(!hor){
-      var sx = 26, fy = 30, padL = 24, padR = 34;
-      gx = padL; gy = titleH + 26;
-      W = padL + (n-1)*sx + padR; H = gy + rows*fy + (names ? 28 : 10);
-      pt = function(s,f){ return [gx + s*sx, gy + (f-base+0.5)*fy]; };
-      var mk = function(s){ return [gx + s*sx, gy - 14]; };
-      if(L.board) g += '<rect x="'+(gx-7)+'" y="'+gy+'" width="'+((n-1)*sx+14)+'" height="'+(rows*fy)+'" rx="3" fill="'+L.board+'"/>';
-      for(var i=1;i<=rows;i++) g += '<rect x="'+(gx-(L.board?7:0))+'" y="'+f2(gy+i*fy-L.fretW/2)+'" width="'+((n-1)*sx+(L.board?14:0))+'" height="'+L.fretW+'" fill="'+L.grid+'"/>';
-      if(base===1) g += '<rect x="'+(gx-(L.board?7:1))+'" y="'+(gy-5)+'" width="'+((n-1)*sx+(L.board?14:2))+'" height="6" rx="1" fill="'+L.nut+'"/>';
-      else { g += '<rect x="'+gx+'" y="'+f2(gy-0.6)+'" width="'+((n-1)*sx)+'" height="1.2" fill="'+L.grid+'"/>';
-             g += '<text x="'+(gx+(n-1)*sx+10)+'" y="'+f2(gy+fy/2+4)+'" font-size="12" fill="'+L.ink+'" font-family="'+FONT+'">'+base+'fr</text>'; }
-      for(var s=0;s<n;s++) g += '<line x1="'+(gx+s*sx)+'" y1="'+gy+'" x2="'+(gx+s*sx)+'" y2="'+(gy+rows*fy)+'" stroke="'+L.strCol(s)+'" stroke-width="'+L.strW(s)+'"/>';
-      if(names) for(s=0;s<n;s++) if(mids[s]!=null)
-        g += '<text x="'+(gx+s*sx)+'" y="'+(gy+rows*fy+19)+'" text-anchor="middle" font-size="11" fill="'+L.sub+'" font-family="'+FONT+'">'+esc(cx.name(mids[s]))+'</text>';
-    } else {
-      var fx = 36, sy = 22, padL2 = 42;
-      gx = padL2; gy = titleH + 12;
-      W = gx + rows*fx + (names ? 38 : 14); H = gy + (n-1)*sy + 26;
+    if(hor){
+      /* 日本の歌本・教則本の形：1弦が上・ナットが左・位置のフレット番号は下 */
+      var fx = 26, sy = 15, gx = 22, gy = title ? 30 : 12;
+      W = gx + rows*fx + (names ? 26 : 10); H = gy + (n-1)*sy + 22;
       pt = function(s,f){ return [gx + (f-base+0.5)*fx, gy + (n-1-s)*sy]; };
-      mk = function(s){ return [gx - 14, gy + (n-1-s)*sy]; };
-      if(L.board) g += '<rect x="'+gx+'" y="'+(gy-7)+'" width="'+(rows*fx)+'" height="'+((n-1)*sy+14)+'" rx="3" fill="'+L.board+'"/>';
-      for(i=1;i<=rows;i++) g += '<rect x="'+f2(gx+i*fx-L.fretW/2)+'" y="'+(gy-(L.board?7:0))+'" width="'+L.fretW+'" height="'+((n-1)*sy+(L.board?14:0))+'" fill="'+L.grid+'"/>';
-      if(base===1) g += '<rect x="'+(gx-5)+'" y="'+(gy-(L.board?7:1))+'" width="6" height="'+((n-1)*sy+(L.board?14:2))+'" rx="1" fill="'+L.nut+'"/>';
-      else { g += '<rect x="'+f2(gx-0.6)+'" y="'+gy+'" width="1.2" height="'+((n-1)*sy)+'" fill="'+L.grid+'"/>';
-             g += '<text x="'+(gx+fx/2)+'" y="'+(gy+(n-1)*sy+20)+'" text-anchor="middle" font-size="12" fill="'+L.ink+'" font-family="'+FONT+'">'+base+'fr</text>'; }
-      for(s=0;s<n;s++){
-        var yy = gy+(n-1-s)*sy;
-        g += '<line x1="'+gx+'" y1="'+yy+'" x2="'+(gx+rows*fx)+'" y2="'+yy+'" stroke="'+L.strCol(s)+'" stroke-width="'+L.strW(s)+'"/>';
-        g += '<text x="10" y="'+(yy+4)+'" text-anchor="middle" font-size="11" fill="'+L.sub+'" font-family="'+FONT+'">'+(n-s)+'</text>';
-        if(names && mids[s]!=null) g += '<text x="'+(gx+rows*fx+8)+'" y="'+(yy+4)+'" font-size="11" fill="'+L.sub+'" font-family="'+FONT+'">'+esc(cx.name(mids[s]))+'</text>';
-      }
+      mk = function(s){ return [gx - 9, gy + (n-1-s)*sy]; };
+      if(title) g += text(4, 18, title, 14, 700, L.ink, 'start');
+      if(L.board) g += '<rect x="'+gx+'" y="'+(gy-5)+'" width="'+(rows*fx)+'" height="'+((n-1)*sy+10)+'" rx="2" fill="'+L.board+'"/>';
+      for(var s=0;s<n;s++){ var yy = gy+(n-1-s)*sy; g += line(gx, yy, gx+rows*fx, yy, L.strW(s), L.strCol(s)); }
+      for(var i=0;i<=rows;i++){ var w = (i===0 && base===1) ? 4 : L.fretW; g += line(gx+i*fx, gy-(L.board?5:0), gx+i*fx, gy+(n-1)*sy+(L.board?5:0), w, L.grid); }
+      if(base>1) g += text(gx+fx/2, gy+(n-1)*sy+15, base, 11, 400, L.ink);
+      if(names) for(s=0;s<n;s++) if(mids[s]!=null) g += text(gx+rows*fx+5, gy+(n-1-s)*sy+3.5, cx.name(mids[s]), 9, 400, L.sub, 'start');
+    } else {
+      /* 海外のコードブックの形：ナットが上・位置は左に「3fr」 */
+      var sx = 17, fy = 20, gx2 = 26, gy2 = title ? 40 : 18;
+      W = gx2 + (n-1)*sx + 14; H = gy2 + rows*fy + (names ? 20 : 8);
+      pt = function(s,f){ return [gx2 + s*sx, gy2 + (f-base+0.5)*fy]; };
+      mk = function(s){ return [gx2 + s*sx, gy2 - 10]; };
+      if(title) g += text(gx2+(n-1)*sx/2, 16, title, 14, 700, L.ink);
+      if(L.board) g += '<rect x="'+(gx2-5)+'" y="'+gy2+'" width="'+((n-1)*sx+10)+'" height="'+(rows*fy)+'" rx="2" fill="'+L.board+'"/>';
+      for(s=0;s<n;s++) g += line(gx2+s*sx, gy2, gx2+s*sx, gy2+rows*fy, L.strW(s), L.strCol(s));
+      for(i=0;i<=rows;i++){ w = (i===0 && base===1) ? 4 : L.fretW; g += line(gx2-(L.board?5:0), gy2+i*fy, gx2+(n-1)*sx+(L.board?5:0), gy2+i*fy, w, L.grid); }
+      if(base>1) g += text(gx2-6, gy2+fy/2+3.5, base+'fr', 10, 400, L.ink, 'end');
+      if(names) for(s=0;s<n;s++) if(mids[s]!=null) g += text(gx2+s*sx, gy2+rows*fy+14, cx.name(mids[s]), 9, 400, L.sub);
     }
-    if(title) g = '<text x="'+f2(W/2)+'" y="21" text-anchor="middle" font-size="18" font-weight="700" fill="'+L.ink+'" font-family="'+FONT+'">'+esc(title)+'</text>' + g;
 
     /* 鳴らさない弦・開放弦 */
     for(s=0;s<n;s++){
       var q = mk(s);
-      if(fr[s]<0) g += '<text x="'+q[0]+'" y="'+(q[1]+5)+'" text-anchor="middle" font-size="14" fill="'+L.mark+'" font-family="'+FONT+'">×</text>';
+      if(fr[s]<0) g += text(q[0], q[1]+4, '×', 11, 400, L.mark);
       else if(fr[s]===0){
         var ocol = (L===LOOK.book) ? L.mark : (cx.iv(mids[s])>=0 ? degColor(cx.iv(mids[s])) : L.mark);
-        g += '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="5.5" fill="none" stroke="'+ocol+'" stroke-width="1.7"/>';
+        g += '<circle cx="'+f2(q[0])+'" cy="'+f2(q[1])+'" r="3.6" fill="none" stroke="'+ocol+'" stroke-width="1"/>';
       }
     }
-    /* セーハ */
-    barresOf(fr, fi).forEach(function(b){
+    /* セーハ：帯1本。指の文字は一番低い弦の側に1つだけ */
+    var bars = barresOf(fr, fi), under = {};
+    bars.forEach(function(b){
       var p1 = pt(b.from,b.fret), p2 = pt(b.to,b.fret);
-      var x0 = Math.min(p1[0],p2[0])-R, y0 = Math.min(p1[1],p2[1])-R;
-      g += '<rect x="'+f2(x0)+'" y="'+f2(y0)+'" width="'+f2(Math.abs(p2[0]-p1[0])+2*R)+'" height="'+f2(Math.abs(p2[1]-p1[1])+2*R)+'" rx="'+R+'" fill="'+L.bar+'" opacity="'+L.barOp+'"/>';
+      g += '<rect x="'+f2(Math.min(p1[0],p2[0])-R)+'" y="'+f2(Math.min(p1[1],p2[1])-R)+'" width="'+f2(Math.abs(p2[0]-p1[0])+2*R)+'" height="'+f2(Math.abs(p2[1]-p1[1])+2*R)+'" rx="'+R+'" fill="'+L.bar+'"/>';
+      for(var k=b.from;k<=b.to;k++) if(fr[k]===b.fret && fi[k]===b.finger) under[k] = (k===b.from) ? 'head' : 'body';
     });
     /* 押さえ */
     for(s=0;s<n;s++){
       if(fr[s]<=0) continue;
       var p = pt(s,fr[s]), m = mids[s];
-      var t = label==='finger' ? (fi[s]||'') : label==='note' ? cx.name(m) : label==='deg' ? cx.deg(m) : '';
-      g += '<circle cx="'+f2(p[0])+'" cy="'+f2(p[1])+'" r="'+R+'" fill="'+L.dot(cx.iv(m))+'"/>';
+      var colored = L!==LOOK.book;
+      if(!under[s] || colored) g += '<circle cx="'+f2(p[0])+'" cy="'+f2(p[1])+'" r="'+R+'" fill="'+L.dot(cx.iv(m))+'"/>';
+      var t = label==='finger' ? (under[s]==='body' ? '' : (FT[fi[s]]||'')) : label==='note' ? cx.name(m) : label==='deg' ? cx.deg(m) : '';
       t = String(t);
-      if(t!=='') g += '<text x="'+f2(p[0])+'" y="'+f2(p[1]+3.9)+'" text-anchor="middle" font-size="'+(t.length>1?10:11.5)+'" font-weight="700" fill="'+L.dotText+'" font-family="'+FONT+'">'+esc(t)+'</text>';
+      if(t!=='') g += text(p[0], p[1]+3.6, t, t.length>1 ? 7.5 : 9.5, 700, L.dotText);
     }
     /* 叩ける的 */
     if(opts.hit) for(s=0;s<n;s++){
@@ -465,9 +474,9 @@
       var h = fr[s]>0 ? pt(s,fr[s]) : mk(s);
       g += '<circle class="cbhit" data-s="'+s+'" data-f="'+fr[s]+'" cx="'+f2(h[0])+'" cy="'+f2(h[1])+'" r="'+(R+3)+'" fill="transparent" style="cursor:pointer"/>';
     }
-    var bg = opts.bg===false ? '' : '<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="8" fill="'+L.bg+'"/>';
-    var mw = opts.maxWidth || (hor ? 300 : 190);
-    return '<svg class="ds-chordbox" viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+mw+'px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(title||'コードの押さえ方')+'">'+bg+g+'</svg>';
+    var bg = opts.bg===false ? '' : '<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="4" fill="'+L.bg+'"/>';
+    var sc = opts.scale || 1.3;
+    return '<svg class="ds-chordbox" viewBox="0 0 '+W+' '+H+'" width="'+f2(W*sc)+'" height="'+f2(H*sc)+'" style="max-width:100%;height:auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(title||'コードの押さえ方')+'">'+bg+g+'</svg>';
   }
   function merge(a,b){ var o={},k; for(k in a) o[k]=a[k]; for(k in b) o[k]=b[k]; return o; }
 
@@ -500,7 +509,7 @@
   }
 
   DS.chordbox = {
-    version:'chordbox-1.0',
+    version:'chordbox-1.1',
     svg:svg, find:find, parse:parse, fingers:fingerOf, barres:barresOf, notes:notesOf, play:play, mount:mount,
     OPEN_SHAPES:OPEN_SHAPES, MOVABLE:MOVE
   };
