@@ -9,6 +9,8 @@
 | scale.css | 文字の大きさ7段階・余白・角の丸み・影 |
 | icons.js | 線のアイコン（Phosphor＋ギター用の自作5点）。`ic('guitar')` で呼び出す |
 | motion.css ＋ motion.js | 押したときの動き（2つセットで使う） |
+| notation.js ＋ fonts/ | 五線譜・TAB譜の描画（記号のフォント Bravura 付き） |
+| fretboard.js | 指板の図 |
 | sound.js ＋ sounds/ | 楽器の音（アコギ・ナイロン・エレキ・ピアノ・ベース・ドラム・クリック） |
 
 ## 読み込み方（`<head>` に、使うものだけ書く）
@@ -59,6 +61,44 @@ DS.sound.volume(0.6);                                // 全体の音量
 ```js
 el.innerHTML += DS.sound.creditsHtml(['drums']);   // 使う楽器を渡すと、表記が必要なものだけ文にして返す
 ```
+
+
+## 五線譜・TAB譜
+
+`<script src="https://yagarguitar-stack.github.io/design-system/v1/notation.js"></script>` を読み込むと `SLDraw`（＝`DS.notation`）が使えます。記号のフォント Bravura は自動で読み込まれます。中身は「五線譜とTAB」の描画モジュール（draw-1.40）そのものです。
+
+譜面は1小節ずつ、音の並びで渡します。長さは4分音符＝1680（`SLDraw.T.QUARTER`）。弦の番号 `s` は **0＝6弦 … 5＝1弦**、`f` はフレットです。
+
+```js
+var T = SLDraw.T;
+var bar = { ts:{n:4,d:4}, ks:0, notes:[
+  { start:0,           len:T.QUARTER, stops:[{s:5,f:0}] },            // 1弦開放（ミ）
+  { start:T.QUARTER,   len:T.QUARTER, stops:[{s:5,f:1}] },            // 1弦1フレット（ファ）
+  { start:T.HALF,      len:T.HALF,    stops:[{s:5,f:0},{s:4,f:1}] },  // 和音
+]};
+el.innerHTML = SLDraw.renderSystem([bar, bar], {SP:11, W:300}).svg;   // 五線譜＋TAB譜
+el.innerHTML = SLDraw.renderRow([bar], {SP:11, W:300});                // 五線譜だけ
+```
+
+- 休符は `{start, len, rest:true}`、調号は `ks`（シャープの数、フラットはマイナス）
+- 描けない指定は黙って直さず、戻り値の `errors` に理由が入ります
+- `SLDraw.ready()` でフォントの読み込みを待てます
+- Bravura は SIL Open Font License 1.1（fonts/OFL.txt）
+
+## 指板の図
+
+`<script src="https://yagarguitar-stack.github.io/design-system/v1/fretboard.js"></script>` を読み込むと `DS.fret` が使えます。五線譜がなくても使えます。
+
+```js
+el.innerHTML = DS.fret.svg({ frets:12, notes:[{s:5,f:0},{s:4,f:1,ring:true}] });   // 音を並べる（標準は音名ごとに12色）
+el.innerHTML = DS.fret.svg({ frets:12, press:[{s:3,f:2}], same:[{s:2,f:7}], range:{lo:0,hi:5} });   // 押さえ・同じ高さ・範囲
+var p = DS.fret.hitAt(svg要素, e.clientX, e.clientY, 描いた時と同じ指定);   // 押された場所 → {s, f}
+```
+
+- 標準の見た目：エボニーの指板・均等なフレット間隔・丸のポジションマーク・音名ごとに12色
+- 変えられる指定：`wood`（'ebony'・'rose'・'maple'）、`spacing`（'even'・'real'）、`colorMode`（'pc'＝音名ごと・'deg'＝度数ごと・'mono'＝1色）、`root`（度数の基準の音）、`names`（'en'・'it'）、`accidental`（'sharp'・'flat'）、`theme`（'dark'・'light'＝板の外の文字の色）、`tuning`、`capo`、`big`
+- 描ける役割：`notes`（音の丸）・`press`（押さえ）・`same`（同じ高さの別の押さえ）・`roots`（基準の音の輪）・`glow`（鳴っている押さえ）・`range`（範囲の外を暗く）・`hit:true`（押せる的）
+- `spacing:'even'` の時の寸法は notation.js の `fretboardSVG` と同じです（座標から押された場所を割り出すツールのため、変えないこと）
 
 ## 一部だけ変えたいとき
 
