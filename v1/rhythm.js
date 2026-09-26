@@ -132,15 +132,15 @@
       notes.forEach(function(n,ni){
         if(n.tu){var sh=shape(n.len*n.tu.n/n.tu.in);
           if(!sh)errors.push((bi+1)+'小節目：この連符の長さは描けません');
-          evs.push({start:st,len:n.len,rest:!!n.rest,tie:!!n.tie,accent:!!n.accent,tu:n.tu,sh:sh||{b:'q',dots:0,unit:Q},src:ni,ref:n.ref,hidden:!!n.hidden});st+=n.len;return;}
+          evs.push({start:st,len:n.len,rest:!!n.rest,tie:!!n.tie,accent:!!n.accent,tu:n.tu,sh:sh||{b:'q',dots:0,unit:Q},src:ni,ref:n.ref,hidden:!!n.hidden,mark:n.mark,blank:!!n.blank});if(n.blank)evs[evs.length-1].rest=true;st+=n.len;return;}
         // 普通の音：まとまりの境目で分ける（両端がそろい、形があれば分けない）
         var parts=[],s=st,e=st+n.len,cuts=edges.slice(1,-1);
         var whole=n.rest&&near(s,0)&&near(e,L)&&notes.length===1;
-        if(whole){evs.push({start:s,len:n.len,rest:true,wholeBar:true,sh:{b:'w',dots:0,unit:W},src:ni,ref:n.ref});st=e;return;}
+        if(whole){evs.push({start:s,len:n.len,rest:true,wholeBar:true,sh:{b:'w',dots:0,unit:W},src:ni,ref:n.ref,hidden:!!n.hidden});st=e;return;}
         var aligned=edges.some(function(x){return near(x,s);});   // 拍の頭から始まる音は、形があればそのまま（付点4分など）
         var mid=(ts[0]===4&&ts[1]===4)?H:-1;
         var nextEdge=null;edges.forEach(function(x){if(nextEdge==null&&x>s+0.5)nextEdge=x;});
-        var okWhole=aligned&&shape(n.len)&&!(mid>0&&s<mid-0.5&&e>mid+0.5&&!near(s,0))&&!(split&&nextEdge!=null&&e>nextEdge+0.5);   // splitBeats：拍ごとに必ず分ける
+        var okWhole=(n.blank&&shape(n.len))||aligned&&shape(n.len)&&!(mid>0&&s<mid-0.5&&e>mid+0.5&&!near(s,0))&&!(split&&nextEdge!=null&&e>nextEdge+0.5);   // splitBeats：拍ごとに必ず分ける
         if(keep&&shape(n.len))okWhole=true;   // split:false：拍をまたいでも分けない（出題用）
         if(okWhole)parts.push([s,e]);
         else{var p=s;cuts.forEach(function(c){if(c>p+0.5&&c<e-0.5){parts.push([p,c]);p=c;}});parts.push([p,e]);}
@@ -149,11 +149,12 @@
           if(shape(len)){pieces.push([a,len]);return;}
           while(len>0.5){var k=0;while(k<PIECES.length&&PIECES[k]>len+0.5)k++;var v=PIECES[k]||len;pieces.push([a,v]);a+=v;len-=v;}});
         pieces.forEach(function(pc,pi){var last=pi===pieces.length-1;
-          evs.push({start:pc[0],len:pc[1],rest:!!n.rest,tie:n.rest?false:(last?!!n.tie:true),accent:pi===0&&!!n.accent,sh:shape(pc[1])||{b:'q',dots:0,unit:Q},src:ni,cont:pi>0,ref:n.ref,hidden:!!n.hidden});});
+          evs.push({start:pc[0],len:pc[1],rest:!!n.rest||!!n.blank,tie:n.rest?false:(last?!!n.tie:true),accent:pi===0&&!!n.accent,sh:shape(pc[1])||{b:'q',dots:0,unit:Q},src:ni,cont:pi>0,ref:n.ref,hidden:!!n.hidden,mark:n.mark,blank:!!n.blank});});
         st=e;
       });
       evs.forEach(function(ev){ev.bar=bi;ev.abs=abs+ev.start;});
-      out.push({ts:ts,groups:bar.groups,len:L,start:abs,edges:edges,events:evs});abs+=L;
+      var span=Math.max(L,sum);   // 拍子より長い時（はみ出し）は、その分だけ延ばして描く
+      out.push({ts:ts,groups:bar.groups,len:L,span:span,start:abs,edges:edges,events:evs});abs+=span;
     });
     // 前の音からタイで来ているか（音を鳴らさない）
     var all=[];out.forEach(function(b){all=all.concat(b.events);});
@@ -166,7 +167,9 @@
   function style(){if(styled)return;styled=true;var s=document.createElement('style');
     s.textContent='.ds-rhy{display:block;max-width:100%;height:auto;color:var(--ds-rhy-ink,#1c1a17)}'+
       '.ds-rhy .ds-rhy-cur{fill:var(--ds-rhy-hi,#e07b12)}'+
-      '.ds-rhy .ds-rhy-on *{fill:var(--ds-rhy-hi,#e07b12)}';
+      '.ds-rhy .ds-rhy-on *{fill:var(--ds-rhy-hi,#e07b12)}'+
+      '.ds-rhy .ds-rhy-ok,.ds-rhy .ds-rhy-ok *{fill:var(--ds-rhy-ok,#40573c)}.ds-rhy .ds-rhy-ng,.ds-rhy .ds-rhy-ng *{fill:var(--ds-rhy-ng,#8e2f39)}'+
+      '.ds-rhy path.ds-rhy-ok{stroke:var(--ds-rhy-ok,#40573c)}.ds-rhy path.ds-rhy-ng{stroke:var(--ds-rhy-ng,#8e2f39)}';
     document.head.appendChild(s);}
   function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
   function gw(k,sp){return GL[k][1]*sp/250;}
@@ -185,7 +188,7 @@
     var minLen=Q;N.events.forEach(function(ev){if(!ev.rest)minLen=Math.min(minLen,ev.len);});
     var beatW=Math.max(o.beatWidth||sp*6.5,(Q/minLen)*sp*1.9);   // beatWidth：4分1つぶんの幅（時間に比例のとき）
     N.bars.forEach(function(bar){
-      if(mode==='time'){bar.inner=(bar.len/Q)*beatW;bar.events.forEach(function(ev){ev.rx=ev.start/bar.len*bar.inner;});}
+      if(mode==='time'){bar.inner=(bar.span/Q)*beatW;bar.events.forEach(function(ev){ev.rx=ev.start/bar.span*bar.inner;});}
       else{var cx=0;bar.events.forEach(function(ev){ev.rx=cx;cx+=sp*(1.6+2.6*Math.pow(ev.len/Q,.6))+(ev.sh.dots?sp*.5:0);});bar.inner=cx;}
     });
     /* 段に分ける */
@@ -221,14 +224,19 @@
       lines.forEach(function(k){gLine.appendChild(el('rect',{x:r2(s.x0),y:r2(y0+k*sp-th/2),width:r2(s.x1-s.x0),height:r2(th)}));});
       var bh=staff===0?1.2:2;
       s.bars.forEach(function(bar,k){var last=bar===N.bars[N.bars.length-1];
+        if(bar.span>bar.len+0.5&&mode==='time'){var lx=bar.ix+(bar.len/bar.span)*bar.inner*s.stretch-sp*.9;
+          gLine.appendChild(el('rect',{x:r2(lx),y:r2(y0-bh*sp),width:r2(sp*.18),height:r2(bh*2*sp),'class':'ds-rhy-ng'}));
+          gLine.appendChild(el('rect',{x:r2(lx+sp*.2),y:r2(y0-bh*sp-sp*.8),width:r2(bar.endX-lx-sp*.4),height:r2(bh*2*sp+sp*1.6),'class':'ds-rhy-ng',opacity:.08}));
+          var lab=el('text',{x:r2((lx+bar.endX)/2),y:r2(y0+bh*sp+sp*2),'text-anchor':'middle','font-size':r2(sp*1.25),'class':'ds-rhy-ng'});
+          lab.textContent=o.overflowLabel||'はみ出し';gLine.appendChild(lab);return;}
         if(last){gLine.appendChild(el('rect',{x:r2(bar.endX-sp*.9),y:r2(y0-bh*sp),width:r2(sp*.14),height:r2(bh*2*sp)}));
           gLine.appendChild(el('rect',{x:r2(bar.endX-sp*.5),y:r2(y0-bh*sp),width:r2(sp*.5),height:r2(bh*2*sp)}));}
         else gLine.appendChild(el('rect',{x:r2(bar.endX-sp*.07),y:r2(y0-bh*sp),width:r2(sp*.14),height:r2(bh*2*sp)}));});
     });
     /* 音符・休符 */
-    N.events.forEach(function(ev){var s=systems[ev.sys],y0=s.y0,g=el('g',{'data-i':ev.i});ev.g=g;gNote.appendChild(g);var b=ev.sh.b;
+    N.events.forEach(function(ev){var s=systems[ev.sys],y0=s.y0,g=el('g',{'data-i':ev.i});if(ev.mark)g.setAttribute('class','ds-rhy-'+ev.mark);ev.g=g;gNote.appendChild(g);var b=ev.sh.b;
       ev.y0=y0;
-      if(ev.hidden)return;   // hidden：場所だけ取って描かない（小節の足りない分を空けておく時など）
+      if(ev.hidden||ev.blank)return;   // hidden：場所だけ取って描かない／blank：「？」の枠（下で描く）
       if(ev.rest){var k=ev.wholeBar?'rWhole':{w:'rWhole',h:'rHalf',q:'rQuarter','8':'r8','16':'r16','32':'r32'}[b],rx=ev.x;
         if(ev.wholeBar){var bar=N.bars[ev.bar];rx=(bar.ix+bar.endX-sp*1.2)/2-gw(k,sp)/2;}
         g.appendChild(glyph(k,rx,y0,sp));
@@ -267,7 +275,7 @@
         if(!ev.run&&lv)ev.g.appendChild(glyph('flag'+ev.sh.b,ev.stemX,top,sp));
         ev.top=top;});
       runs.forEach(function(r){var L=r.list,a=L[0].stemX,z=L[L.length-1].stemX+stemW,by=r.top,bt=sp*.5;
-        var gB=el('g',{});gNote.appendChild(gB);r.g=gB;
+        var gB=el('g',{});gNote.appendChild(gB);r.g=gB;var mk=L[0].mark;if(mk&&L.every(function(e){return e.mark===mk;}))gB.setAttribute('class','ds-rhy-'+mk);
         gB.appendChild(el('rect',{x:r2(a),y:r2(by),width:r2(z-a),height:r2(bt)}));
         for(var lv=2;lv<=3;lv++){var y=by+(lv-1)*sp*.75;
           for(var i=0;i<L.length;i++){if((LEVEL[L[i].sh.b]||0)<lv)continue;var j=i;while(j+1<L.length&&(LEVEL[L[j+1].sh.b]||0)>=lv)j++;
@@ -286,8 +294,8 @@
     });
     /* タイ（符頭の下に弧。段をまたぐときは半分ずつ） */
     N.events.forEach(function(ev,i){if(!ev.tie||ev.rest)return;var nx=N.events[i+1];if(!nx||nx.rest)return;
-      function arc(a,z,y0){var y=y0+sp*.75,h=sp*1.05*Math.min(1,Math.max(.55,(z-a)/(sp*5)));
-        gNote.appendChild(el('path',{d:'M'+r2(a)+' '+r2(y)+'Q'+r2((a+z)/2)+' '+r2(y+h)+' '+r2(z)+' '+r2(y)+'Q'+r2((a+z)/2)+' '+r2(y+h*.72)+' '+r2(a)+' '+r2(y)+'Z'}));}
+      function arc(a,z,y0){var y=y0+sp*.75,h=sp*1.05*Math.min(1,Math.max(.55,(z-a)/(sp*5)));var cl=ev.mark?'ds-rhy-'+ev.mark:null;
+        gNote.appendChild(el('path',{d:'M'+r2(a)+' '+r2(y)+'Q'+r2((a+z)/2)+' '+r2(y+h)+' '+r2(z)+' '+r2(y)+'Q'+r2((a+z)/2)+' '+r2(y+h*.72)+' '+r2(a)+' '+r2(y)+'Z','class':cl||''}));}
       if(nx.sys===ev.sys)arc(ev.x+hw*.75,nx.x+hw*.25,systems[ev.sys].y0);
       else{arc(ev.x+hw*.75,systems[ev.sys].x1-sp*.3,systems[ev.sys].y0);arc(systems[nx.sys].x0+sp*.4,nx.x+hw*.25,systems[nx.sys].y0);}});
     /* 縦の線 */
@@ -298,9 +306,15 @@
       var bar=null;for(var i=0;i<N.bars.length;i++){if(tick>=N.bars[i].start-0.5)bar=N.bars[i];}
       if(!bar)bar=N.bars[0];var rel=tick-bar.start,evs=bar.events,a=null,b=null;
       for(var k=0;k<evs.length;k++){if(evs[k].start<=rel+0.5)a=evs[k];else{b=evs[k];break;}}
-      var s=systems[bar.sys],ax=a?a.x:bar.ix,at=a?a.start:0,bx=b?b.x:bar.endX-sp*1.1,btk=b?b.start:bar.len;
+      var s=systems[bar.sys],ax=a?a.x:bar.ix,at=a?a.start:0,bx=b?b.x:bar.endX-sp*1.1,btk=b?b.start:bar.span;
       return {x:ax+(bx-ax)*Math.max(0,Math.min(1,(rel-at)/Math.max(1,btk-at))),y0:s.y0};
     }
+    /* 空欄（blank）：点線の枠と「？」 */
+    N.events.forEach(function(ev){if(!ev.blank)return;var y0=systems[ev.sys].y0,a=ev.x-sp*.35,z=posAt(ev.abs+ev.len).x-sp*.9;
+      if(z<a+sp*2)z=a+sp*2;
+      var bx=el('g',{'class':'ds-rhy-blank'});ev.g.appendChild(bx);
+      bx.appendChild(el('rect',{x:r2(a),y:r2(y0-sp*2.8),width:r2(z-a),height:r2(sp*5.6),rx:r2(sp*.8),fill:'var(--ds-rhy-blank-bg,#f2e7e6)',stroke:'var(--ds-rhy-blank,#8e2f39)','stroke-width':r2(sp*.16),'stroke-dasharray':r2(sp*.5)+' '+r2(sp*.38)}));
+      var q=el('text',{x:r2((a+z)/2),y:r2(y0+sp*.8),'text-anchor':'middle','font-size':r2(sp*2.2),'font-family':'Georgia,serif',fill:'var(--ds-rhy-blank,#8e2f39)'});q.textContent='?';bx.appendChild(q);});
     /* 拍の区切りの点線（beatGuides:true） */
     if(o.beatGuides){N.bars.forEach(function(bar){var y0=systems[bar.sys].y0,bh=staff===0?1.2:2;
       bar.edges.slice(1,-1).forEach(function(t){var x=posAt(bar.start+t).x-sp*.9;
@@ -378,7 +392,7 @@
     return ctl;
   }
 
-  DS.rhythm={version:'1.1',T:{WHOLE:W,HALF:H,QUARTER:Q,EIGHTH:E,SIXTEENTH:S,THIRTYSECOND:T32},
+  DS.rhythm={version:'1.2',T:{WHOLE:W,HALF:H,QUARTER:Q,EIGHTH:E,SIXTEENTH:S,THIRTYSECOND:T32},
     parse:parse,fromGrid:fromGrid,normalize:normalize,render:render,play:play,
     shape:shape,   // 見た目の長さ → {b:記号, dots:付点の数}。描けない長さは null
     newTupletId:function(){return ++tuId;}};
