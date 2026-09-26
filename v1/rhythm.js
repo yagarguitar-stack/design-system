@@ -119,7 +119,7 @@
   /* ───────── 描ける形に整える（拍・小節の中央で分けてタイ） ───────── */
   var PIECES=[W*1.5,W,H*1.75,H*1.5,H,Q*1.75,Q*1.5,Q,E*1.5,E,S*1.5,S,T32];
   function normalize(score,o){
-    o=o||{};var split=!!(o.splitBeats||score.splitBeats);
+    o=o||{};var split=!!(o.splitBeats||score.splitBeats),keep=o.split===false;
     var errors=(score.errors||[]).slice(),out=[],abs=0;
     score.bars.forEach(function(bar,bi){
       var ts=bar.ts||[4,4],L=barLen(ts),gs=beatGroups(ts,bar.groups),edges=[0],t=0,evs=[];
@@ -132,15 +132,16 @@
       notes.forEach(function(n,ni){
         if(n.tu){var sh=shape(n.len*n.tu.n/n.tu.in);
           if(!sh)errors.push((bi+1)+'小節目：この連符の長さは描けません');
-          evs.push({start:st,len:n.len,rest:!!n.rest,tie:!!n.tie,accent:!!n.accent,tu:n.tu,sh:sh||{b:'q',dots:0,unit:Q},src:ni});st+=n.len;return;}
+          evs.push({start:st,len:n.len,rest:!!n.rest,tie:!!n.tie,accent:!!n.accent,tu:n.tu,sh:sh||{b:'q',dots:0,unit:Q},src:ni,ref:n.ref,hidden:!!n.hidden});st+=n.len;return;}
         // 普通の音：まとまりの境目で分ける（両端がそろい、形があれば分けない）
         var parts=[],s=st,e=st+n.len,cuts=edges.slice(1,-1);
         var whole=n.rest&&near(s,0)&&near(e,L)&&notes.length===1;
-        if(whole){evs.push({start:s,len:n.len,rest:true,wholeBar:true,sh:{b:'w',dots:0,unit:W},src:ni});st=e;return;}
+        if(whole){evs.push({start:s,len:n.len,rest:true,wholeBar:true,sh:{b:'w',dots:0,unit:W},src:ni,ref:n.ref});st=e;return;}
         var aligned=edges.some(function(x){return near(x,s);});   // 拍の頭から始まる音は、形があればそのまま（付点4分など）
         var mid=(ts[0]===4&&ts[1]===4)?H:-1;
         var nextEdge=null;edges.forEach(function(x){if(nextEdge==null&&x>s+0.5)nextEdge=x;});
         var okWhole=aligned&&shape(n.len)&&!(mid>0&&s<mid-0.5&&e>mid+0.5&&!near(s,0))&&!(split&&nextEdge!=null&&e>nextEdge+0.5);   // splitBeats：拍ごとに必ず分ける
+        if(keep&&shape(n.len))okWhole=true;   // split:false：拍をまたいでも分けない（出題用）
         if(okWhole)parts.push([s,e]);
         else{var p=s;cuts.forEach(function(c){if(c>p+0.5&&c<e-0.5){parts.push([p,c]);p=c;}});parts.push([p,e]);}
         var pieces=[];
@@ -148,7 +149,7 @@
           if(shape(len)){pieces.push([a,len]);return;}
           while(len>0.5){var k=0;while(k<PIECES.length&&PIECES[k]>len+0.5)k++;var v=PIECES[k]||len;pieces.push([a,v]);a+=v;len-=v;}});
         pieces.forEach(function(pc,pi){var last=pi===pieces.length-1;
-          evs.push({start:pc[0],len:pc[1],rest:!!n.rest,tie:n.rest?false:(last?!!n.tie:true),accent:pi===0&&!!n.accent,sh:shape(pc[1])||{b:'q',dots:0,unit:Q},src:ni,cont:pi>0});});
+          evs.push({start:pc[0],len:pc[1],rest:!!n.rest,tie:n.rest?false:(last?!!n.tie:true),accent:pi===0&&!!n.accent,sh:shape(pc[1])||{b:'q',dots:0,unit:Q},src:ni,cont:pi>0,ref:n.ref,hidden:!!n.hidden});});
         st=e;
       });
       evs.forEach(function(ev){ev.bar=bi;ev.abs=abs+ev.start;});
@@ -175,14 +176,14 @@
   function render(target,input,o){
     o=o||{};style();
     var sc=typeof input==='string'?parse(input):(input&&input.bars?input:{bars:input||[]});
-    var N=normalize(sc,{splitBeats:o.splitBeats});
+    var N=normalize(sc,{splitBeats:o.splitBeats,split:o.split});
     var sp=o.sp||9,mode=o.spacing||'time',staff=o.staff==null?1:o.staff;
     var box=typeof target==='string'?document.getElementById(target):target;
     var maxW=o.width||(box&&box.clientWidth)||640;
     var hw=gw('nhBlack',sp),stemW=sp*.12,stemL=sp*3.5;
     /* 幅を決める */
     var minLen=Q;N.events.forEach(function(ev){if(!ev.rest)minLen=Math.min(minLen,ev.len);});
-    var beatW=Math.max(sp*6.5,(Q/minLen)*sp*1.9);
+    var beatW=Math.max(o.beatWidth||sp*6.5,(Q/minLen)*sp*1.9);   // beatWidth：4分1つぶんの幅（時間に比例のとき）
     N.bars.forEach(function(bar){
       if(mode==='time'){bar.inner=(bar.len/Q)*beatW;bar.events.forEach(function(ev){ev.rx=ev.start/bar.len*bar.inner;});}
       else{var cx=0;bar.events.forEach(function(ev){ev.rx=cx;cx+=sp*(1.6+2.6*Math.pow(ev.len/Q,.6))+(ev.sh.dots?sp*.5:0);});bar.inner=cx;}
@@ -190,7 +191,7 @@
     /* 段に分ける */
     var systems=[],cur=null,x;
     N.bars.forEach(function(bar,bi){
-      var showTs=bi===0||N.bars[bi-1].ts.join()!==bar.ts.join();
+      var showTs=o.timeSig!==false&&(bi===0||N.bars[bi-1].ts.join()!==bar.ts.join());
       var tsW=showTs?sp*3.2:0,need=tsW+sp*1.4+bar.inner+sp*1.2;
       if(!cur||(cur.w+need>maxW&&cur.bars.length)){cur={bars:[],w:sp*.8};systems.push(cur);}
       bar.showTs=showTs;bar.tsW=tsW;bar.need=need;cur.bars.push(bar);cur.w+=need;
@@ -226,6 +227,8 @@
     });
     /* 音符・休符 */
     N.events.forEach(function(ev){var s=systems[ev.sys],y0=s.y0,g=el('g',{'data-i':ev.i});ev.g=g;gNote.appendChild(g);var b=ev.sh.b;
+      ev.y0=y0;
+      if(ev.hidden)return;   // hidden：場所だけ取って描かない（小節の足りない分を空けておく時など）
       if(ev.rest){var k=ev.wholeBar?'rWhole':{w:'rWhole',h:'rHalf',q:'rQuarter','8':'r8','16':'r16','32':'r32'}[b],rx=ev.x;
         if(ev.wholeBar){var bar=N.bars[ev.bar];rx=(bar.ix+bar.endX-sp*1.2)/2-gw(k,sp)/2;}
         g.appendChild(glyph(k,rx,y0,sp));
@@ -233,7 +236,7 @@
       var hk=b==='w'?'nhWhole':b==='h'?'nhHalf':'nhBlack';g.appendChild(glyph(hk,ev.x,y0,sp));
       var hwid=gw(hk,sp);for(var dd=0;dd<ev.sh.dots;dd++)g.appendChild(glyph('dot',ev.x+hwid+sp*(.35+.45*dd),y0-sp*.5,sp));
       if(ev.accent)g.appendChild(glyph('accent',ev.x+hwid/2-gw('accent',sp)/2,y0+sp*2.1,sp));
-      ev.stemX=ev.x+hw-stemW;
+      ev.stemX=ev.x+hw-stemW;ev.y0=y0;
     });
     /* 連桁・旗・連符 */
     N.bars.forEach(function(bar){var y0=systems[bar.sys].y0,evs=bar.events,runs=[],cur=null;
@@ -246,8 +249,14 @@
         tg.list.push(ev);ev.tg=tg;
         // 番号の無い連符は、拍の頭で区切る
         if(ev.tu.id==null&&bar.edges.some(function(x){return near(x,ev.start+ev.len);}))tg.done=true;});
-      evs.forEach(function(ev){var beam=!ev.rest&&LEVEL[ev.sh.b],gi=ev.tg?'t'+tgs.indexOf(ev.tg):grp(ev.start);
+      // 連桁のまとめ方：'beat'＝1拍ずつ（初期）／'half'＝8分だけなら2拍ずつ（4/4・2/4 など。16分を含めば1拍ずつ）
+      var half=o.beamGroup==='half'&&bar.ts[1]===4&&bar.ts[0]!==3&&!bar.groups;
+      function grp2(t){var u=beatUnit(bar.ts)*2;return 'h'+Math.floor((t+0.5)/u);}
+      evs.forEach(function(ev){var beam=o.beams!==false&&!ev.rest&&LEVEL[ev.sh.b],gi=ev.tg?'t'+tgs.indexOf(ev.tg):(half?grp2(ev.start):grp(ev.start));
         if(beam&&cur&&cur.gi===gi){cur.list.push(ev);}else{cur=beam?{gi:gi,list:[ev]}:null;if(cur)runs.push(cur);}});
+      if(half){var rr=[];runs.forEach(function(r){
+          if(!r.list.some(function(e){return LEVEL[e.sh.b]>=2;})){rr.push(r);return;}
+          var c2=null;r.list.forEach(function(e){var g=grp(e.start);if(!c2||c2.g!==g){c2={gi:r.gi,g:g,list:[]};rr.push(c2);}c2.list.push(e);});});runs=rr;}
       runs=runs.filter(function(r){return r.list.length>1;});
       runs.forEach(function(r){r.list.forEach(function(ev){ev.run=r;});});
       evs.forEach(function(ev){if(ev.rest||ev.sh.b==='w')return;
@@ -292,10 +301,16 @@
       var s=systems[bar.sys],ax=a?a.x:bar.ix,at=a?a.start:0,bx=b?b.x:bar.endX-sp*1.1,btk=b?b.start:bar.len;
       return {x:ax+(bx-ax)*Math.max(0,Math.min(1,(rel-at)/Math.max(1,btk-at))),y0:s.y0};
     }
+    /* 拍の区切りの点線（beatGuides:true） */
+    if(o.beatGuides){N.bars.forEach(function(bar){var y0=systems[bar.sys].y0,bh=staff===0?1.2:2;
+      bar.edges.slice(1,-1).forEach(function(t){var x=posAt(bar.start+t).x-sp*.9;
+        gLine.appendChild(el('line',{x1:r2(x),x2:r2(x),y1:r2(y0-bh*sp),y2:r2(y0+bh*sp),stroke:'var(--ds-rhy-guide,rgba(0,0,0,.28))','stroke-width':r2(sp*.12),'stroke-dasharray':r2(sp*.25)+' '+r2(sp*.35)}));});});}
     var view={svg:svg,el:box,events:N.events,bars:N.bars,total:N.total,errors:N.errors,sp:sp,
       cursor:function(tick){if(tick==null||tick<0||tick>N.total){cursor.setAttribute('opacity',0);return;}
         var p=posAt(tick);cursor.setAttribute('x',r2(p.x-sp*.14));cursor.setAttribute('y',r2(p.y0-sp*5));cursor.setAttribute('opacity',.9);},
       light:function(i,on){var ev=N.events[i];if(ev&&ev.g)ev.g.classList.toggle('ds-rhy-on',!!on);},
+      /* 元の音の番号（ref）→ その音の最初の記号 */
+      byRef:function(ref){for(var i=0;i<N.events.length;i++)if(N.events[i].ref===ref&&!N.events[i].cont)return N.events[i];return null;},
       clear:function(){cursor.setAttribute('opacity',0);N.events.forEach(function(ev){ev.g&&ev.g.classList.remove('ds-rhy-on');});}};
     return view;
   }
@@ -363,7 +378,7 @@
     return ctl;
   }
 
-  DS.rhythm={version:'1.0',T:{WHOLE:W,HALF:H,QUARTER:Q,EIGHTH:E,SIXTEENTH:S,THIRTYSECOND:T32},
+  DS.rhythm={version:'1.1',T:{WHOLE:W,HALF:H,QUARTER:Q,EIGHTH:E,SIXTEENTH:S,THIRTYSECOND:T32},
     parse:parse,fromGrid:fromGrid,normalize:normalize,render:render,play:play,
     shape:shape,   // 見た目の長さ → {b:記号, dots:付点の数}。描けない長さは null
     newTupletId:function(){return ++tuId;}};
