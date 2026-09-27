@@ -257,3 +257,32 @@ DS.chordbox.mount(el, 'G7');          // 描いて、叩くと鳴る。戻り値
 - 版は chordbox-1.1 です（`DS.chordbox.version`）
 
 見本：chordbox-demo.html（theory.js・sound.js と同じフォルダで開く）
+画面の部品（components.css・components.js）
+html
+<link rel="stylesheet" href="https://yagarguitar-stack.github.io/design-system/v1/components.css">
+<script src="https://yagarguitar-stack.github.io/design-system/v1/sound.js"></script>      <!-- 効果音（無くても動く） -->
+<script src="https://yagarguitar-stack.github.io/design-system/v1/components.js"></script>
+モチーフは2つ。一番外の要素に class="ds-ui ds-score"（楽譜の紙）か class="ds-ui ds-plan"（楽器の設計図）を付ける。ツールごとに使い分ける
+夜の見え方は、端末の設定（暗い画面）に合わせて自動で切り替わる。楽譜の紙は焦げ茶の地、設計図は青焼き
+文字（Zen Kaku Gothic Antique・Cormorant Garamond・IBM Plex Mono）は .ds-ui の中だけに効く。今のツールの見た目は変わらない
+名前はすべて ds- で始まる。部品は HTML に書いておけば、読み込み時に自動で整う（後から足した時は DS.ui.init(要素)）
+部品	書き方	起きること
+見出し	<header class="ds-hd"><h1 class="ds-ttl">題</h1><p class="ds-sub">副題</p></header>	
+区切り	<section class="ds-sec"><h2 class="ds-sh">テンポ</h2>…</section>	番号（A B C…／① ② ③…）は自動
+大きなボタン	<button class="ds-btn ds-big">スタート</button>	文字を替える：DS.ui.label(ボタン,'ストップ',{pressed:true})
+ボタンの列	<div class="ds-btnbar"><button class="ds-btn">設定</button>…</div>	
+長押しで確定	<button class="ds-btn ds-danger" data-ds-hold="長押しで削除します">削除</button>	1秒で ds-hold。軽く押すと案内が出る
+1つ選ぶ	<div class="ds-choice" data-ds-value="1"><button value="1">4分</button>…</div>	change（e.detail.value）
+オン・オフ	<label class="ds-toggle"><input type="checkbox">ドラム</label>	ふつうの change
+テンポ	<div class="ds-tempo" data-bpm="120" data-min="30" data-max="240" data-beats="4"></div>	数字を押して入力・−／＋・速さの言葉。change（e.detail.bpm）
+つまみ	<div class="ds-slider" data-value="70" data-ds-dyn aria-label="音量"></div>	input（動かす間）・change（離した時）
+入力欄	<label class="ds-field"><span data-alt="Titolo" data-alt-plan="NAME">曲名</span><input></label>	
+一覧	<div class="ds-list"></div> → DS.ui.list(要素,[{title,sub,value,date}],{onPick,cols})	押すと onPick(項目,番号)
+設定の引き出し	<div class="ds-sheet" id="set" data-ds-title="設定" data-ds-sub="詳細図 A">…</div>	data-ds-open="#set" のボタンで開く、data-ds-close で閉じる。外側・Esc でも閉じる
+お知らせ	DS.ui.toast(要素,'保存しました')、赤字は {ng:true}	文字がほどけて現れる
+テンポの拍の表示と再生の線：var t=DS.ui.tempo('#id'); t.follow(clock) で clock.js の時計に合わせて動く（画面だけなら t.start()、止めるのは t.stop()）
+枠の飾り：楽譜の紙の足元は data-ds-foot="百合ヶ丘ギター教室"、設計図の表題欄は data-ds-title・data-ds-dwg・data-ds-scale を一番外の要素に書く
+効果音：sound.js の DS.sound.ui('tap'|'big'|'select'|'on'|'off'|'open'|'close'|'save'|'ng'|'del')（Kenney「Interface Sounds」CC0・表記不要）。DS.ui.sound(false) で止める（端末に覚える）
+開く時の演出は自動。止めるなら一番外の要素に data-ds-enter="off"
+
+見本：components-demo.html
