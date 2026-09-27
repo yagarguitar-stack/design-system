@@ -126,8 +126,16 @@
       var l=c.licenseUrl?'<a href="'+esc(c.licenseUrl)+'" target="_blank" rel="noopener">'+esc(c.license)+'</a>':esc(c.license);
       return esc(c.label)+'の音：'+n+'（'+l+'）';}).join('<br>')+'</p>';
   }
+    /* 画面の部品の効果音（録音：Kenney「Interface Sounds」CC0）。sounds/ui/ の10音。
+     名前：tap 普通のボタン／big 大きなボタン／select 選ぶ／on・off 切り替え／open・close 開く・閉じる／save 保存・お知らせ／ng だめ／del 削除 */
+  var UI_NAMES={tap:1,big:1,select:1,on:1,off:1,open:1,close:1,save:1,ng:1,del:1},uiBank={},uiVol=.55;
+  function uiLoad(n){if(!uiBank[n])uiBank[n]=fetch(BASE+'ui/'+n+'.mp3').then(function(r){if(!r.ok)throw new Error('音が読み込めません：ui/'+n);return r.arrayBuffer();}).then(decode);return uiBank[n];}
+  function ui(n,opt){if(!UI_NAMES[n])return;opt=opt||{};var c=ac();
+    uiLoad(n).then(function(b){var s=c.createBufferSource(),g=c.createGain();g.gain.value=opt.vol==null?uiVol:opt.vol;s.buffer=b;s.connect(g);g.connect(opt.dest||out);s.start(opt.time||0);}).catch(function(){});}
+  function uiPreload(){Object.keys(UI_NAMES).forEach(function(n){uiLoad(n).catch(function(){});});}
   DS.sound={
     instruments:Object.keys(MAP),names:NAMES,
+    ui:ui,uiPreload:uiPreload,
     use:use,load:load,isReady:isReady,credits:credits,creditsHtml:creditsHtml,play:play,chord:chord,drum:drum,click:click,midi:midi,
     now:function(){return ac().currentTime;},
     context:function(){return ac();},
