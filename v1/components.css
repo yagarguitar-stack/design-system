@@ -1,9 +1,10 @@
 /* yagarguitar-stack 共通デザイン v1 — 画面の部品（components.css）
-   モチーフは4つ。ツールの一番外の要素に付けて選ぶ：
+   モチーフは5つ。ツールの一番外の要素に付けて選ぶ：
      <div class="ds-ui ds-score">…</div>   楽譜の紙
      <div class="ds-ui ds-plan">…</div>    楽器の設計図
      <div class="ds-ui ds-felt">…</div>    フェルトの手芸（やわらかい）
      <div class="ds-ui ds-note">…</div>    こどもの五線ノート（やわらかい）
+     <div class="ds-ui ds-studio" data-ds-finish="night|vintage|digital">…</div>  録音スタジオの卓（ScoreLine 系の道具）
    夜の見え方は、端末の設定（暗い画面）に合わせて自動で切り替わる。
    ここで決めた文字（Zen Kaku Gothic Antique ほか）は .ds-ui の中だけに効く。今のツールの見た目は変えない。
    名前はすべて ds- で始める（ツールや表示画面の名前とぶつからないように）。
@@ -397,6 +398,128 @@
 .ds-note .ds-toast{background:var(--ds-hi);color:var(--ds-on-hi);border:2px solid var(--ds-ink);border-radius:12px;padding:6px 16px;box-shadow:3px 3px 0 var(--ds-shadow);letter-spacing:.06em}
 .ds-note .ds-toast.ds-ng{background:var(--ds-accent);color:#fff}
 .ds-note .ds-sheet{border-radius:18px 18px 0 0;border-top:2px solid var(--ds-ink);background:var(--ds-card)}
+
+/* ═════════════════ 5　録音スタジオの卓（ScoreLine 系の道具） ═════════════════
+   仕上げは data-ds-finish：night（夜のスタジオ・既定）／vintage（ヴィンテージの卓）／digital（現代のデジタル卓）
+   いつも同じ色（端末の暗い設定では変わらない）。ボタンは枠と押し面の二重で、選ぶと内側から灯る */
+.ds-studio{--ds-font:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;--ds-ease:cubic-bezier(.2,.8,.2,1);
+  --ds-paper:#16171a;--ds-ink:#ddd8cc;--ds-accent:#ff6a55;--ds-faint:rgba(255,255,255,.05);
+  --st-deck:linear-gradient(#26282c,#1c1d20);--st-hl:rgba(255,255,255,.07);--st-leg2:#a9a497;--st-silk:#8d8778;
+  --st-cap:linear-gradient(#3b3e44,#2c2e33);--st-caphl:rgba(255,255,255,.13);--st-capleg:#ddd8cc;--st-bezel:#060607;--st-well:#0d0e10;
+  --st-lit:linear-gradient(#5e4a28,#3f321d);--st-litleg:#ffe2b0;--st-glow:rgba(255,178,64,.9);--st-glowin:rgba(255,178,64,.45);--st-spill:rgba(255,170,60,.18);
+  --st-lamp:#ffb340;--st-ledoff:#2c2418;--st-dispbg:#070808;--st-disp:#73f0a0;--st-dispglow:rgba(115,240,160,.55);--st-rack:linear-gradient(#2c2e33,#232428);
+  --ds-hi:var(--st-lamp);--ds-well:var(--st-well);
+  background-color:var(--ds-paper);color:var(--ds-ink);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ds-studio[data-ds-finish="vintage"]{--ds-paper:#3e4852;--ds-ink:#f1e8d2;--ds-accent:#ff7a5c;
+  --st-deck:linear-gradient(#4f5a66,#434c56);--st-hl:rgba(255,255,255,.12);--st-leg2:#d3cab2;--st-silk:#efe4c5;
+  --st-cap:linear-gradient(#e9e2cf,#cfc6ad);--st-caphl:rgba(255,255,255,.7);--st-capleg:#2a2a26;--st-bezel:#20262c;--st-well:#2b3238;
+  --st-lit:linear-gradient(#ffcf7a,#f0a53a);--st-litleg:#2a1a05;--st-glow:rgba(255,255,255,0);--st-glowin:rgba(255,240,200,.7);--st-spill:rgba(255,190,90,.35);
+  --st-lamp:#ffb340;--st-ledoff:#6b5a3e;--st-dispbg:#161a14;--st-disp:#ffb54a;--st-dispglow:rgba(255,181,74,.6);--st-rack:linear-gradient(#56616d,#4a545f);background-image:none}
+.ds-studio[data-ds-finish="digital"]{--ds-paper:#0a0b0d;--ds-ink:#e9edf2;--ds-accent:#ff5a60;
+  --st-deck:#0f1013;--st-hl:rgba(255,255,255,.05);--st-leg2:#8a93a0;--st-silk:#66707d;
+  --st-cap:linear-gradient(#1d2026,#16181c);--st-caphl:rgba(255,255,255,.06);--st-capleg:#e9edf2;--st-bezel:#000;--st-well:#050608;
+  --st-lit:linear-gradient(#152a33,#0f1f26);--st-litleg:#bdf1ff;--st-glow:rgba(41,208,255,.85);--st-glowin:rgba(41,208,255,.28);--st-spill:rgba(41,208,255,.14);
+  --st-lamp:#29d0ff;--st-ledoff:#1b2226;--st-dispbg:#000;--st-disp:#f2f6fa;--st-dispglow:rgba(255,255,255,.35);--st-rack:#121418;background-image:none}
+.ds-studio :focus-visible{outline:2px solid var(--st-lamp);outline-offset:2px}
+/* 題字：卓に貼るマスキングテープ（デジタル卓は黒い札） */
+.ds-studio .ds-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+.ds-studio .ds-ttl{display:inline-block;position:relative;font-family:"Permanent Marker","Zen Kaku Gothic New",sans-serif;font-weight:400;font-size:20px;letter-spacing:.06em;padding:4px 16px 3px;color:#1e2a52;background:#efeada;transform:rotate(-1.4deg);box-shadow:0 1px 1.5px rgba(0,0,0,.55);clip-path:polygon(1% 4%,99% 0,100% 94%,0 100%)}
+.ds-studio[data-ds-finish="digital"] .ds-ttl{font-family:"Oswald",sans-serif;font-weight:500;letter-spacing:.3em;font-size:15px;color:#e9edf2;background:#000;transform:none;clip-path:none;box-shadow:inset 0 0 0 1px #2a2f36;padding:8px 16px}
+.ds-studio .ds-sub{font-size:10.5px;letter-spacing:.24em;color:var(--st-silk);margin:0}
+/* 区切り：卓の一区画。名前は刷り文字 */
+.ds-studio .ds-sec{margin:0 0 12px;padding:14px 16px 16px;border-radius:8px;background:var(--st-deck);box-shadow:inset 0 1px 0 var(--st-hl),0 0 0 1px rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.3)}
+.ds-studio .ds-sh{font-size:10.5px;font-weight:500;letter-spacing:.26em;color:var(--st-silk);margin-bottom:10px}
+.ds-studio .ds-sh::before{display:none}
+.ds-studio .ds-sh::after{background:rgba(0,0,0,.5);box-shadow:0 1px 0 var(--st-hl)}
+/* ボタン：枠（ベゼル）＋押し面。押すと沈む */
+.ds-studio .ds-btn,.ds-studio .ds-choice>button{position:relative;border-radius:6px;background:var(--st-cap);color:var(--st-capleg);
+  box-shadow:0 0 0 1px var(--st-bezel),inset 0 1px 0 var(--st-caphl),inset 0 -2px 0 rgba(0,0,0,.28),0 3px 0 var(--st-bezel),0 4px 6px rgba(0,0,0,.35);
+  transition:transform .09s var(--ds-ease),box-shadow .09s,background .18s,color .18s,text-shadow .18s}
+.ds-studio .ds-btn::before{display:none}
+.ds-studio .ds-btn.ds-dn,.ds-studio .ds-choice>button:active{transform:translateY(2px);color:var(--st-capleg)!important;box-shadow:0 0 0 1px var(--st-bezel),inset 0 1px 0 var(--st-caphl),0 1px 0 var(--st-bezel),0 1px 2px rgba(0,0,0,.35)}
+.ds-studio .ds-btn[aria-pressed="true"],.ds-studio .ds-choice>button[aria-checked="true"],.ds-studio .ds-big{background:var(--st-lit);color:var(--st-litleg)!important;text-shadow:0 0 8px var(--st-glow);
+  box-shadow:0 0 0 1px var(--st-bezel),inset 0 0 14px var(--st-glowin),inset 0 1px 0 rgba(255,255,255,.25),0 3px 0 var(--st-bezel),0 0 16px var(--st-spill)}
+.ds-studio[data-ds-finish="digital"] .ds-btn[aria-pressed="true"],.ds-studio[data-ds-finish="digital"] .ds-choice>button[aria-checked="true"],.ds-studio[data-ds-finish="digital"] .ds-big{box-shadow:0 0 0 1px var(--st-lamp),inset 0 0 12px var(--st-glowin),0 3px 0 #000,0 0 14px var(--st-spill)}
+.ds-studio .ds-big{min-height:56px;letter-spacing:.3em;text-indent:.3em;font-size:16px}
+.ds-studio .ds-big.ds-dn{transform:translateY(2px)}
+.ds-studio .ds-btn.ds-danger{color:var(--ds-accent)}
+.ds-studio .ds-btn.ds-danger.ds-dn{color:var(--ds-accent)!important}
+.ds-studio .ds-btnbar{gap:10px}
+.ds-studio .ds-choice{gap:4px;padding:4px;border-radius:8px;background:var(--st-well);box-shadow:inset 0 1px 3px rgba(0,0,0,.6),0 1px 0 var(--st-hl)}
+.ds-studio .ds-choice>button{min-height:40px;font-weight:500}
+.ds-studio .ds-choice .ds-mk{display:none}
+/* オン・オフ：灯りの入切 */
+.ds-studio .ds-sw{position:relative;width:52px;height:28px;border-radius:6px;flex:0 0 auto;background:var(--st-cap);box-shadow:0 0 0 1px var(--st-bezel),inset 0 1px 0 var(--st-caphl),0 2px 0 var(--st-bezel)}
+.ds-studio .ds-sw::after{content:'';position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:4px;background:var(--st-ledoff);box-shadow:inset 0 1px 2px rgba(0,0,0,.6);transition:transform .2s cubic-bezier(.3,1.4,.5,1),background .2s,box-shadow .2s}
+.ds-studio .ds-toggle input:checked~.ds-sw::after{transform:translateX(24px);background:var(--st-lamp);box-shadow:0 0 10px var(--st-lamp)}
+.ds-studio .ds-toggle input:focus-visible~.ds-sw{outline:2px solid var(--st-lamp);outline-offset:3px}
+/* テンポ：表示窓の数字と、拍のランプ */
+.ds-studio .ds-mid{flex:1;text-align:center}
+.ds-studio .ds-bpm,.ds-studio .ds-bpmin{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:46px;color:var(--st-disp);text-shadow:0 0 10px var(--st-dispglow);background:var(--st-dispbg);border-radius:6px;padding:2px 16px;box-shadow:inset 0 1px 5px rgba(0,0,0,.9),0 1px 0 var(--st-hl)}
+.ds-studio .ds-bpm{display:inline-block}
+.ds-studio .ds-bpmin{width:4.2ch;text-align:center;border:0}
+.ds-studio .ds-u,.ds-studio .ds-term{font-size:10px;letter-spacing:.3em;color:var(--st-silk);text-align:center;margin-top:6px}
+.ds-studio .ds-hint{text-align:center;color:var(--st-silk)}
+.ds-studio .ds-step{width:46px;height:44px}
+.ds-studio .ds-lane{display:flex;justify-content:center;gap:10px;margin:12px auto 0;padding:8px 12px;width:max-content;border-radius:6px;background:var(--st-dispbg);box-shadow:inset 0 1px 4px rgba(0,0,0,.9),0 1px 0 var(--st-hl)}
+.ds-studio .ds-lane i{width:13px;height:13px;border-radius:50%;background:var(--st-ledoff);transition:background .05s,box-shadow .05s}
+.ds-studio .ds-lane i.ds-now{background:var(--st-disp);box-shadow:0 0 8px var(--st-disp)}
+.ds-studio .ds-lane i.ds-now:first-child{background:var(--st-lamp);box-shadow:0 0 9px var(--st-lamp)}
+.ds-studio .ds-lane .ds-ph{display:none}
+/* つまみ（フェーダー）・入力欄 */
+.ds-studio .ds-slider{color:var(--st-silk)}
+.ds-studio .ds-slider .ds-sv{font-family:"IBM Plex Mono",monospace;color:var(--st-disp);text-shadow:0 0 6px var(--st-dispglow)}
+.ds-studio .ds-field{background:var(--st-dispbg);border-radius:6px;padding:8px 12px 6px;box-shadow:inset 0 1px 5px rgba(0,0,0,.9),0 1px 0 var(--st-hl)}
+.ds-studio .ds-field .ds-fl{font-size:10px;letter-spacing:.24em;color:var(--st-silk)}
+.ds-studio .ds-field input,.ds-studio .ds-field textarea{color:var(--st-disp);font-family:"IBM Plex Mono","Zen Kaku Gothic New",monospace;text-shadow:0 0 6px var(--st-dispglow)}
+.ds-studio .ds-field:focus-within{box-shadow:inset 0 1px 5px rgba(0,0,0,.9),0 0 0 1px var(--st-lamp)}
+/* 一覧：ラックの段 */
+.ds-studio .ds-rec{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;border-radius:6px;background:var(--st-cap);color:var(--st-capleg);box-shadow:0 0 0 1px var(--st-bezel),inset 0 1px 0 var(--st-caphl),0 2px 0 var(--st-bezel);transition:transform .09s}
+.ds-studio .ds-rec::before{display:none}
+.ds-studio .ds-rec.ds-dn{transform:translateY(2px);color:var(--st-capleg)}
+.ds-studio .ds-rec i{font:500 12px "IBM Plex Mono",monospace;font-style:normal;color:var(--st-disp);background:var(--st-dispbg);border-radius:4px;text-align:center;padding:3px 0;text-shadow:0 0 6px var(--st-dispglow)}
+.ds-studio .ds-rec b{font-size:14px}
+.ds-studio .ds-rec small{display:block;font-size:11px;opacity:.7;font-weight:400}
+.ds-studio .ds-rec span{font:500 13px "IBM Plex Mono",monospace;white-space:nowrap}
+/* お知らせ：表示窓の文字 */
+.ds-studio .ds-toast{font-family:"IBM Plex Mono","Zen Kaku Gothic New",monospace;background:var(--st-dispbg);color:var(--st-disp);text-shadow:0 0 8px var(--st-dispglow);border-radius:6px;padding:8px 16px;box-shadow:0 0 0 1px #000,0 8px 20px rgba(0,0,0,.5)}
+.ds-studio .ds-toast.ds-ng{color:var(--ds-accent);text-shadow:0 0 8px var(--ds-accent)}
+/* 設定の引き出し：ラックの一段（四隅のねじ） */
+.ds-studio .ds-veil{background:rgba(0,0,0,.5)}
+.ds-studio .ds-sheet{background:var(--st-rack);color:var(--ds-ink);border-radius:6px 6px 0 0;box-shadow:0 0 0 1px #000,inset 0 1px 0 var(--st-hl),0 -12px 30px rgba(0,0,0,.5);
+  background-image:radial-gradient(circle at 12px 12px,#bbb 0 2.5px,#444 3.5px,transparent 4.5px),radial-gradient(circle at calc(100% - 12px) 12px,#bbb 0 2.5px,#444 3.5px,transparent 4.5px),var(--st-rack)}
+.ds-studio .ds-sheet .ds-sec{box-shadow:inset 0 1px 0 var(--st-hl),0 0 0 1px rgba(0,0,0,.6)}
+.ds-studio.ds-enter .ds-sec{animation:ds-slide .45s var(--ds-ease) both}
+.ds-studio.ds-enter .ds-sec:nth-of-type(2){animation-delay:.06s}.ds-studio.ds-enter .ds-sec:nth-of-type(3){animation-delay:.12s}.ds-studio.ds-enter .ds-sec:nth-of-type(n+4){animation-delay:.18s}
+@keyframes ds-slide{from{opacity:0;transform:translateY(6px)}}
+/* 中央の表示（DS.ui.bridge）：再生の位置／曲の地図。押すと切り替わる */
+.ds-bridge{position:relative;display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px 0 6px;cursor:pointer;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.ds-bridge:hover{background:rgba(255,255,255,.03)}
+.ds-bpos{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.ds-bmap{display:none;gap:4px;width:min(560px,100%);padding:6px 8px 7px;border-radius:5px;background:var(--st-dispbg);box-shadow:inset 0 1px 4px rgba(0,0,0,.9),0 1px 0 var(--st-hl)}
+.ds-bridge.ds-vmap .ds-bpos{display:none}.ds-bridge.ds-vmap .ds-bmap{display:flex}
+.ds-bridge .ds-cl{font-size:10.5px;letter-spacing:.2em;color:var(--st-silk);white-space:nowrap}
+.ds-bridge .ds-cl b{font:500 13px "IBM Plex Mono",monospace;color:var(--ds-ink);letter-spacing:.04em;margin-left:4px}
+.ds-bridge .ds-disp{display:inline-flex;align-items:baseline;gap:4px;font:500 22px "IBM Plex Mono",monospace;padding:6px 14px;border-radius:5px;background:var(--st-dispbg);color:var(--st-disp);text-shadow:0 0 7px var(--st-dispglow);box-shadow:inset 0 1px 4px rgba(0,0,0,.9),0 1px 0 var(--st-hl)}
+.ds-bridge .ds-disp small{font-family:var(--ds-font);font-size:10px;opacity:.65;margin-left:10px;white-space:nowrap}
+.ds-bridge .ds-disp small:first-child{margin-left:0}
+.ds-bridge .ds-disp b{font-weight:500;min-width:1.3ch;text-align:right}
+.ds-lamps{display:flex;gap:6px;padding:8px 10px;border-radius:5px;background:var(--st-dispbg);box-shadow:inset 0 1px 4px rgba(0,0,0,.9),0 1px 0 var(--st-hl)}
+.ds-lamps i{width:12px;height:12px;border-radius:50%;background:var(--st-ledoff);box-shadow:inset 0 1px 2px rgba(0,0,0,.7)}
+.ds-lamps i.ds-on{background:var(--st-disp);box-shadow:0 0 8px var(--st-disp)}
+.ds-lamps i.ds-on:first-child{background:var(--st-lamp);box-shadow:0 0 9px var(--st-lamp)}
+.ds-msec{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ds-msec span{font-size:10.5px;letter-spacing:.12em;color:var(--st-disp);text-shadow:0 0 6px var(--st-dispglow);white-space:nowrap;overflow:hidden;text-overflow:clip;min-height:1.2em}
+.ds-mbars{display:flex;gap:2px;height:14px}
+.ds-mbars button{flex:1;min-width:3px;padding:0;border:0;border-radius:2px;background:var(--st-ledoff);cursor:pointer;transition:background .1s}
+.ds-mbars button:hover{background:color-mix(in srgb,var(--st-disp) 35%,var(--st-ledoff))}
+.ds-mbars button.ds-loop{background:color-mix(in srgb,var(--st-lamp) 35%,var(--st-ledoff))}
+.ds-mbars button.ds-now{background:var(--st-disp);box-shadow:0 0 8px var(--st-disp)}
+.ds-dots{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px}
+.ds-dots i{width:5px;height:5px;border-radius:50%;background:var(--st-silk);opacity:.35}
+.ds-bridge:not(.ds-vmap) .ds-dots i:first-child,.ds-bridge.ds-vmap .ds-dots i:last-child{opacity:1;background:var(--st-lamp)}
+@media (prefers-reduced-motion:reduce){.ds-studio *{transition:none!important;animation:none!important}}
 
 /* ═════════════════ 夜（端末の設定が暗い時） ═════════════════
    見本用に .ds-night で強制でき、.ds-day で昼に固定できる */

@@ -3,6 +3,8 @@
 
    モチーフ：一番外の要素に <div class="ds-ui ds-score">（楽譜の紙）・ds-plan（楽器の設計図）・ds-felt（フェルトの手芸）・ds-note（こどもの五線ノート）
      フェルトとノートは、やわらかい見た目のモチーフ。文字（Zen Maru Gothic／M PLUS Rounded 1c）は使う時だけ読み込む
+     ds-studio（録音スタジオの卓）は ScoreLine 系の道具のモチーフ。仕上げは data-ds-finish="night"（夜のスタジオ・既定）／"vintage"（ヴィンテージの卓）／"digital"（現代のデジタル卓）
+       いつも同じ色（端末の暗い設定では変わらない）。中央の表示 DS.ui.bridge で「再生の位置」と「曲の地図」を押して切り替える
      足元の文字（楽譜の紙・フェルト・ノート）：data-ds-foot="百合ヶ丘ギター教室"
      楽譜の紙の足元の文字：data-ds-foot="百合ヶ丘ギター教室"
      設計図の表題欄：data-ds-title="メトロノーム" data-ds-dwg="MT-01" data-ds-scale="1 : 1"
@@ -30,8 +32,9 @@
   var SW='<svg class="ds-tg" viewBox="0 0 46 20" aria-hidden="true"><path d="M0 10H10M36 10H46" stroke="currentColor" stroke-width="1.25"/><circle cx="12" cy="10" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/><circle cx="34" cy="10" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/><path class="ds-lever" d="M14 10H32" stroke="currentColor" stroke-width="1.6"/></svg>';
   function h(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
   function rootOf(el){return el&&el.closest?el.closest('.ds-ui'):null;}
-  function motif(el){var r=rootOf(el)||el;if(!r||!r.classList)return 'score';var c=r.classList;return c.contains('ds-plan')?'plan':c.contains('ds-felt')?'felt':c.contains('ds-note')?'note':'score';}
+  function motif(el){var r=rootOf(el)||el;if(!r||!r.classList)return 'score';var c=r.classList;return c.contains('ds-plan')?'plan':c.contains('ds-felt')?'felt':c.contains('ds-note')?'note':c.contains('ds-studio')?'studio':'score';}
   function soft(el){var m=motif(el);return m==='felt'||m==='note';}   // やわらかいモチーフ（フェルト・ノート）
+  function flat(el){var m=motif(el);return m==='felt'||m==='note'||m==='studio';}   // 部品の組み立てがやわらかい側と同じもの（スタジオの卓を含む）
   function pad2(n){return String(n).padStart(2,'0');}
   function fire(el,type,detail){el.dispatchEvent(new CustomEvent(type,{bubbles:true,detail:detail}));}
 
@@ -56,7 +59,8 @@
   function frame(r){
     if(r.querySelector(':scope>.ds-deco'))return;
     var M=motif(r);
-    if(M==='felt'||M==='note'){
+    if(M==='studio'){ /* 卓は枠の飾りを付けない（上の棚と下の卓はツール側で組む） */ }
+    else if(M==='felt'||M==='note'){
       r.insertBefore(h('div','ds-deco '+(M==='felt'?'ds-stitch':'ds-margin')),r.firstChild);
       var ft2=r.getAttribute('data-ds-foot');if(ft2!=null){var f2=h('div','ds-deco ds-foot');f2.appendChild(h('span',null)).textContent=ft2;r.appendChild(f2);}
     }else if(M==='score'){
@@ -121,7 +125,7 @@
 
   /* ───── オン・オフ ───── */
   function toggle(l,no){if(l._ds)return;l._ds=1;var inp=l.querySelector('input');if(!inp)return;
-    if(soft(l)){var sw=h('span','ds-sw');sw.setAttribute('aria-hidden','true');inp.parentNode.insertBefore(sw,inp.nextSibling);}
+    if(flat(l)){var sw=h('span','ds-sw');sw.setAttribute('aria-hidden','true');inp.parentNode.insertBefore(sw,inp.nextSibling);}
     else if(motif(l)==='score'){var s=h('span','ds-tg');s.setAttribute('aria-hidden','true');inp.parentNode.insertBefore(s,inp.nextSibling);}
     else{var t=document.createElement('template');t.innerHTML=SW+'<small>SW'+no+'</small>';inp.parentNode.insertBefore(t.content,inp.nextSibling);}
     inp.addEventListener('change',function(){sfx(inp.checked?'on':'off');});}
@@ -130,7 +134,7 @@
   function termOf(b){return b<60?'Largo':b<66?'Larghetto':b<76?'Adagio':b<108?'Andante':b<120?'Moderato':b<156?'Allegro':b<176?'Vivace':b<200?'Presto':'Prestissimo';}
   function tempo(el){
     if(typeof el==='string')el=document.querySelector(el);if(!el)return null;if(el._dst)return el._dst;
-    var S=motif(el)==='score',SO=soft(el),min=+(el.getAttribute('data-min')||30),max=+(el.getAttribute('data-max')||240),beats=+(el.getAttribute('data-beats')||4);
+    var S=motif(el)==='score',SO=flat(el),min=+(el.getAttribute('data-min')||30),max=+(el.getAttribute('data-max')||240),beats=+(el.getAttribute('data-beats')||4);
     var bpm=+(el.getAttribute('data-bpm')||120),shown=bpm,subs=[],noTerm=el.getAttribute('data-ds-term')==='off';
     var html;
     if(S){html=(noTerm?'':'<div class="ds-term"></div>')+'<div class="ds-trow"><div class="ds-mm">'+QN.replace('class="ds-stem" ','')+'<span class="ds-eq">=</span><span class="ds-bpm ds-num"></span></div>'+
@@ -193,13 +197,17 @@
   function dynOf(t){return t<.15?'pp':t<.35?'p':t<.5?'mp':t<.65?'mf':t<.85?'f':'ff';}
   function slider(el){
     if(typeof el==='string')el=document.querySelector(el);if(!el)return null;if(el._dss)return el._dss;
-    var S=motif(el)==='score',SO=soft(el),min=+(el.getAttribute('data-min')||0),max=+(el.getAttribute('data-max')||100),val=+(el.getAttribute('data-value')||min),dyn=el.hasAttribute('data-ds-dyn');
+    var S=motif(el)==='score',SO=soft(el),ST=motif(el)==='studio',min=+(el.getAttribute('data-min')||0),max=+(el.getAttribute('data-max')||100),val=+(el.getAttribute('data-value')||min),dyn=el.hasAttribute('data-ds-dyn');
     el.setAttribute('role','slider');el.tabIndex=0;el.setAttribute('aria-valuemin',min);el.setAttribute('aria-valuemax',max);
     var box=h('div'),sv=h('div','ds-sv');el.appendChild(box);el.appendChild(sv);
     function svg(t){
       if(S){var x=40+240*t,hh=14*t;return '<svg viewBox="0 0 320 56"><text class="ds-dyn" x="4" y="34">'+(dyn?'pp':'')+'</text><text class="ds-dyn" x="290" y="34">'+(dyn?'ff':'')+'</text>'+
         '<path d="M40 28L280 14M40 28L280 42" stroke="currentColor" stroke-width="1.2" fill="none"/><polygon points="40,28 '+x+','+(28-hh)+' '+x+','+(28+hh)+'" fill="currentColor" opacity=".18"/>'+
         '<line x1="'+x+'" y1="'+(28-hh-7)+'" x2="'+x+'" y2="'+(28+hh+7)+'" stroke="var(--ds-accent)" stroke-width="2"/></svg>';}
+      if(ST){var xf=20+280*t,tf='';for(var j=0;j<=16;j++){var xj=20+280*j/16;tf+='<line x1="'+xj+'" y1="'+(j%4?12:8)+'" x2="'+xj+'" y2="16" stroke="currentColor" stroke-width="1" opacity=".45"/><line x1="'+xj+'" y1="40" x2="'+xj+'" y2="'+(j%4?44:48)+'" stroke="currentColor" stroke-width="1" opacity=".45"/>';}
+        return '<svg viewBox="0 0 320 56">'+tf+'<rect x="14" y="24" width="292" height="8" rx="4" fill="#040404"/><rect x="14" y="24" width="'+Math.max(8,xf-14)+'" height="8" rx="4" fill="var(--st-lamp)" opacity=".35"/>'+
+          '<rect x="'+(xf-10)+'" y="11" width="20" height="34" rx="3" fill="url(#dsfc)" stroke="#000" stroke-width="1"/><line x1="'+(xf-8)+'" y1="28" x2="'+(xf+8)+'" y2="28" stroke="#111" stroke-width="2"/>'+
+          '<defs><linearGradient id="dsfc" x1="0" x2="1"><stop offset="0" stop-color="#8a8a8a"/><stop offset=".45" stop-color="#eee"/><stop offset=".55" stop-color="#eee"/><stop offset="1" stop-color="#7a7a7a"/></linearGradient></defs></svg>';}
       if(SO){var xs=20+280*t;return '<svg viewBox="0 0 320 56"><rect x="20" y="21" width="280" height="14" rx="7" fill="currentColor" opacity=".14"/>'+
         '<rect x="20" y="21" width="'+Math.max(14,280*t)+'" height="14" rx="7" fill="var(--ds-hi,var(--ds-accent))"/>'+
         '<circle cx="'+xs+'" cy="28" r="13" fill="var(--ds-well,var(--ds-paper))" stroke="currentColor" stroke-width="2"/></svg>';}
@@ -207,7 +215,7 @@
         if(bg)tk+='<text x="'+xx+'" y="44" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="currentColor" opacity=".75">'+Math.round(min+(max-min)*i/50)+'</text>';}
       return '<svg viewBox="0 0 320 56"><line x1="20" y1="20" x2="300" y2="20" stroke="currentColor" stroke-width="1"/>'+tk+'<line x1="20" y1="21.5" x2="'+x2+'" y2="21.5" stroke="var(--ds-accent)" stroke-width="2.5"/><polygon points="'+x2+',23 '+(x2-5)+',32 '+(x2+5)+',32" fill="var(--ds-accent)"/></svg>';}
     function set(v,how){v=Math.round(Math.max(min,Math.min(max,v)));var t=(v-min)/(max-min||1);val=v;box.innerHTML=svg(t);el.setAttribute('aria-valuenow',v);
-      sv.textContent=S?(dyn?dynOf(t)+'　（'+v+'）':String(v)):SO?String(v):(el.getAttribute('aria-label')?'':'')+(dyn?'VOL ':'')+String(v).padStart(3,'0');
+      sv.textContent=S?(dyn?dynOf(t)+'　（'+v+'）':String(v)):(SO||ST)?String(v):(el.getAttribute('aria-label')?'':'')+(dyn?'VOL ':'')+String(v).padStart(3,'0');
       if(how)fire(el,how,{value:v});}
     function at(e){var r=el.getBoundingClientRect(),x=(e.clientX-r.left)*320/r.width,t=S?(x-40)/240:(x-20)/280;return min+(max-min)*t;}
     var drag=false;
@@ -221,7 +229,7 @@
 
   /* ───── 入力欄 ───── */
   function field(l){if(l._ds)return;l._ds=1;var lab=l.querySelector(':scope>span'),inp=l.querySelector('input,textarea');if(!inp)return;
-    if(lab){lab.classList.add('ds-fl');var alt=soft(l)?null:lab.getAttribute(motif(l)==='plan'?'data-alt-plan':'data-alt');if(alt){lab.setAttribute('aria-hidden','true');inp.setAttribute('aria-label',lab.textContent);lab.textContent=alt;}}   // 見出しの別の書き方：楽譜の紙は data-alt、設計図は data-alt-plan
+    if(lab){lab.classList.add('ds-fl');var alt=flat(l)?null:lab.getAttribute(motif(l)==='plan'?'data-alt-plan':'data-alt');if(alt){lab.setAttribute('aria-hidden','true');inp.setAttribute('aria-label',lab.textContent);lab.textContent=alt;}}   // 見出しの別の書き方：楽譜の紙は data-alt、設計図は data-alt-plan
     if(motif(l)==='score')l.appendChild(h('span','ds-ul'));else if(motif(l)==='plan'){l.appendChild(h('i','ds-tk a'));l.appendChild(h('i','ds-tk d'));}}
 
   /* ───── 一覧 ───── */
@@ -262,10 +270,45 @@
   var softFont=false;
   function loadSoftFont(){if(softFont)return;softFont=true;var l=document.createElement('link');l.rel='stylesheet';
     l.href='https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap';document.head.appendChild(l);}
+  var studioFont=false;
+  function loadStudioFont(){if(studioFont)return;studioFont=true;var l=document.createElement('link');l.rel='stylesheet';
+    l.href='https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Permanent+Marker&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap';document.head.appendChild(l);}
+  /* ── 中央の表示（スタジオの卓）：「再生の位置」と「曲の地図」を押して切り替える ──
+     var b=DS.ui.bridge('#id',{sections:[{name:'リフ',from:1,to:4},…],bars:14,beats:4,loop:[1,4],onJump:function(bar){…}});
+     b.pos(小節,拍,鳴っているか) で今の位置を知らせる。b.set({sections,bars,beats,loop}) で曲の形を変える。
+     見え方（位置／地図）は端末に覚える（ScoreLine の道具で共通） */
+  function bridge(el,o){
+    if(typeof el==='string')el=document.querySelector(el);if(!el)return null;if(el._dsb)return el._dsb;
+    o=o||{};var st={sections:o.sections||[],bars:o.bars||1,beats:o.beats||4,loop:o.loop||null,bar:1,beat:0,play:false},KEY='ds_bridge_view';
+    var view='pos';try{view=localStorage.getItem(KEY)==='map'?'map':'pos';}catch(e){}
+    el.classList.add('ds-bridge');el.setAttribute('role','group');el.setAttribute('aria-label','位置の表示（押すと切り替わる）');el.tabIndex=0;
+    el.innerHTML='<div class="ds-bpos"><span class="ds-cl">位置</span><span class="ds-disp"><small>小節</small><b class="ds-pb">1</b><small>拍</small><b class="ds-pbt">1</b></span><span class="ds-lamps"></span><span class="ds-cl ds-lp"></span></div>'+
+      '<div class="ds-bmap"></div><span class="ds-dots" aria-hidden="true"><i></i><i></i></span>';
+    var lamps=el.querySelector('.ds-lamps'),map=el.querySelector('.ds-bmap');
+    function build(){
+      lamps.innerHTML='';for(var i=0;i<st.beats;i++)lamps.appendChild(h('i'));
+      el.querySelector('.ds-lp').innerHTML=st.loop?'くり返し <b>'+st.loop[0]+'–'+st.loop[1]+'</b>':'';
+      map.innerHTML='';var secs=st.sections.length?st.sections:[{name:'',from:1,to:st.bars}];
+      secs.forEach(function(sc){var d=h('div','ds-msec');d.style.flex=String(sc.to-sc.from+1);d.appendChild(h('span')).textContent=sc.name||'';var bs=h('div','ds-mbars');
+        for(var k=sc.from;k<=sc.to;k++){var c=h('button');c.type='button';c.dataset.bar=k;c.setAttribute('aria-label',k+'小節目へ');bs.appendChild(c);}d.appendChild(bs);map.appendChild(d);});
+      draw();}
+    function draw(){
+      el.classList.toggle('ds-vmap',view==='map');
+      el.querySelector('.ds-pb').textContent=st.bar;el.querySelector('.ds-pbt').textContent=st.beat+1;
+      Array.prototype.forEach.call(lamps.children,function(l,i){l.classList.toggle('ds-on',st.play&&i===st.beat);});
+      Array.prototype.forEach.call(map.querySelectorAll('button'),function(c){var k=+c.dataset.bar;c.classList.toggle('ds-now',k===st.bar);c.classList.toggle('ds-loop',!!st.loop&&k>=st.loop[0]&&k<=st.loop[1]);});}
+    function flip(){view=view==='map'?'pos':'map';try{localStorage.setItem(KEY,view);}catch(e){}sfx('select');draw();}
+    el.addEventListener('click',function(e){var c=e.target.closest('.ds-bmap button');
+      if(c){e.stopPropagation();st.bar=+c.dataset.bar;st.beat=0;draw();if(o.onJump)o.onJump(st.bar);return;}flip();});
+    el.addEventListener('keydown',function(e){if(e.target===el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();flip();}});
+    build();
+    var api={pos:function(bar,beat,play){st.bar=bar;st.beat=beat||0;st.play=!!play;draw();},set:function(n){for(var k in n)st[k]=n[k];build();},view:function(v){if(v){view=v;draw();}return view;}};
+    el._dsb=api;return api;
+  }
   function init(root){
     var roots=root?[root]:Array.prototype.slice.call(document.querySelectorAll('.ds-ui'));
     roots.forEach(function(r){
-      if(r._dsr)return;r._dsr=1;if(soft(r))loadSoftFont();frame(r);
+      if(r._dsr)return;r._dsr=1;if(soft(r))loadSoftFont();if(motif(r)==='studio')loadStudioFont();frame(r);
       r.querySelectorAll('.ds-sheet').forEach(function(s){sheet(s);});
       r.querySelectorAll('.ds-btn').forEach(button);
       r.querySelectorAll('.ds-choice').forEach(choice);
@@ -276,6 +319,6 @@
       if(r.getAttribute('data-ds-enter')!=='off')enter(r);
     });
   }
-  DS.ui={version:'1.1',init:init,toast:toast,sheet:sheet,choice:choice,tempo:tempo,slider:slider,list:list,label:label,enter:enter,decode:decode,sound:sound,sfx:sfx,termOf:termOf};
+  DS.ui={version:'1.2',bridge:bridge,init:init,toast:toast,sheet:sheet,choice:choice,tempo:tempo,slider:slider,list:list,label:label,enter:enter,decode:decode,sound:sound,sfx:sfx,termOf:termOf};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){init();});else init();
 })();

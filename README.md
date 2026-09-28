@@ -267,14 +267,17 @@ DS.chordbox.mount(el, 'G7');          // 描いて、叩くと鳴る。戻り値
 <script src="https://yagarguitar-stack.github.io/design-system/v1/components.js"></script>
 ```
 
-- モチーフは4つ。一番外の要素に付けて、ツールごとに使い分ける
+- モチーフは5つ。一番外の要素に付けて、ツールごとに使い分ける
   - `class="ds-ui ds-score"`：楽譜の紙
   - `class="ds-ui ds-plan"`：楽器の設計図
   - `class="ds-ui ds-felt"`：フェルトの手芸（やわらかい）
   - `class="ds-ui ds-note"`：こどもの五線ノート（やわらかい）
+  - `class="ds-ui ds-studio" data-ds-finish="night"`：録音スタジオの卓（ScoreLine 系の道具）。仕上げは `night`（夜のスタジオ・既定）／`vintage`（ヴィンテージの卓）／`digital`（現代のデジタル卓）
 - 夜の見え方は、端末の設定（暗い画面）に合わせて自動で切り替わる。楽譜の紙は焦げ茶の地、設計図は青焼き、フェルトは焦げ茶の布、ノートは紺のノート
 - やわらかい2つ（フェルト・ノート）は、区切りが札になり、ボタンは押すと沈む。文字がほどける演出は使わず、そのまま出す
 - やわらかい2つの文字（Zen Maru Gothic・M PLUS Rounded 1c）は、そのモチーフを使う時だけ読み込む
+- スタジオの卓は、端末の暗い設定に関係なくいつも同じ色。ボタンは押すと沈み、選んだものは内側から灯る。数字は表示窓の光る文字。文字（Oswald・Permanent Marker・Zen Kaku Gothic New）は使う時だけ読み込む
+- スタジオの卓でツール側が使える色：`--st-lamp`（灯り）・`--st-disp`（表示窓の文字）・`--st-dispbg`（表示窓の地）・`--st-cap`（ボタンの面）・`--st-silk`（刷り文字）ほか
 - やわらかい2つには、ツール側で使える色もある：`--ds-hi`（塗りの強調色）・`--ds-on-hi`（その上の文字）・`--ds-well`（ボタンの面）。ノートは `--ds-card`（札の面）も
 - 文字（Zen Kaku Gothic Antique・Cormorant Garamond・IBM Plex Mono）は `.ds-ui` の中だけに効く。今のツールの見た目は変わらない
 - 名前はすべて `ds-` で始まる。部品は HTML に書いておけば、読み込み時に自動で整う（後から足した時は `DS.ui.init(要素)`）
@@ -300,5 +303,10 @@ DS.chordbox.mount(el, 'G7');          // 描いて、叩くと鳴る。戻り値
 - 効果音：sound.js の `DS.sound.ui('tap'|'big'|'select'|'on'|'off'|'open'|'close'|'save'|'ng'|'del')`（Kenney「Interface Sounds」CC0・表記不要）。`DS.ui.sound(false)` で止める（端末に覚える）
 - 開く時の演出は自動。止めるなら一番外の要素に `data-ds-enter="off"`
 
-見本：components-demo.html（上の切り替えで4つのモチーフを見比べられる）
-- 版は 1.1 です（`DS.ui.version`）。1.1 でフェルトとノートを足しました
+- 中央の表示（スタジオの卓）：`var b=DS.ui.bridge('#id',{sections:[{name:'リフ',from:1,to:4},…],bars:14,beats:4,loop:[1,4],onJump:function(bar){…}})`
+  - 押すと「再生の位置（小節・拍・拍のランプ・くり返し）」と「曲の地図（目印ごとの小節の帯）」が切り替わる。どちらを見ていたかは端末に覚える（ScoreLine の道具で共通）
+  - 地図の小節を押すと、切り替えずに `onJump(小節)` を呼ぶ
+  - `b.pos(小節,拍,鳴っているか)` で今の位置を知らせる（拍は 0 から）。`b.set({sections,bars,beats,loop})` で曲の形を変える
+
+見本：components-demo.html（上の切り替えで5つのモチーフ・スタジオの3仕上げを見比べられる）
+- 版は 1.2 です（`DS.ui.version`）。1.1 でフェルトとノート、1.2 でスタジオの卓と中央の表示を足しました

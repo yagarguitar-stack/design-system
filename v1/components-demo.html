@@ -15,13 +15,14 @@
 </style></head>
 <body>
 <div class="bar">
-  <div class="g">モチーフ <button class="on" data-m="ds-score">楽譜の紙</button><button data-m="ds-plan">楽器の設計図</button><button data-m="ds-felt">フェルトの手芸</button><button data-m="ds-note">こどもの五線ノート</button></div>
+  <div class="g">モチーフ <button class="on" data-m="ds-score">楽譜の紙</button><button data-m="ds-plan">楽器の設計図</button><button data-m="ds-felt">フェルトの手芸</button><button data-m="ds-note">こどもの五線ノート</button><button data-m="ds-studio-night">スタジオ（夜）</button><button data-m="ds-studio-vintage">スタジオ（ヴィンテージ）</button><button data-m="ds-studio-digital">スタジオ（デジタル）</button></div>
   <div class="g">時間（見本用） <button class="on" data-t="">端末に合わせる</button><button data-t="ds-day">昼</button><button data-t="ds-night">夜</button></div>
   <div class="g"><button class="on" id="snd">効果音あり</button></div>
 </div>
 <div class="stage">
   <div class="ds-ui ds-score" id="app" data-ds-foot="百合ヶ丘ギター教室" data-ds-title="メトロノーム" data-ds-dwg="MT-01" data-ds-scale="1 : 1">
     <header class="ds-hd"><h1 class="ds-ttl">メトロノーム</h1><p class="ds-sub" id="sub">Metronome — Op. 1</p></header>
+    <section class="ds-sec" id="brsec" hidden><h2 class="ds-sh">位置の表示（押すと切り替わる）</h2><div id="bridge"></div></section>
     <section class="ds-sec"><h2 class="ds-sh">テンポ</h2><div class="ds-tempo" id="tempo" data-bpm="120" data-beats="4"></div></section>
     <section class="ds-sec"><h2 class="ds-sh">細かさ</h2>
       <div class="ds-choice" id="div" data-ds-value="1"><button value="1">4分</button><button value="2">8分</button><button value="3">3連</button><button value="4">16分</button></div></section>
@@ -42,10 +43,12 @@
 </div>
 <script>
 /* 見本用：モチーフの選び直し（部品を整える前に行う） */
-(function(){var h=location.hash.slice(1),m=['ds-plan','ds-felt','ds-note'].indexOf(h)>=0?h:'ds-score',a=document.getElementById('app');a.classList.remove('ds-score','ds-plan','ds-felt','ds-note');a.classList.add(m);
+(function(){var h=location.hash.slice(1),fin=null,a=document.getElementById('app');if(h.indexOf('ds-studio-')===0){fin=h.slice(10);h='ds-studio';}
+  var m=['ds-plan','ds-felt','ds-note','ds-studio'].indexOf(h)>=0?h:'ds-score';a.classList.remove('ds-score','ds-plan','ds-felt','ds-note','ds-studio');a.classList.add(m);
+  if(fin){a.setAttribute('data-ds-finish',fin);document.getElementById('sub').textContent='メトロノーム';document.getElementById('brsec').hidden=false;}
   if(m==='ds-plan')document.getElementById('sub').textContent='METRONOME / MT-01';
   if(m==='ds-felt'||m==='ds-note')document.getElementById('sub').textContent='メトロノームとリズム練習';
-  document.querySelectorAll('.bar [data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);});})();
+  document.querySelectorAll('.bar [data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===(fin?'ds-studio-'+fin:m));});})();
 </script>
 <script src="sound.js"></script>
 <script src="clock.js"></script>
@@ -61,10 +64,13 @@
       {cols:['NO.','名称 NAME','BPM','DATE'],onPick:function(it,i){t.set(RECS[i].bpm);if(clk)clk.set({bpm:RECS[i].bpm});DS.ui.toast(app,'読み込みました');}});}
   drawRecs();
   // 鳴らす：clock.js の時計に合わせて、テンポの線も動く
+  var br=app.classList.contains('ds-studio')?DS.ui.bridge('#bridge',{sections:[{name:'リフ',from:1,to:4},{name:'ソロ',from:5,to:8},{name:'サビ',from:9,to:12},{name:'終わり',from:13,to:14}],bars:14,beats:4,loop:[1,4],onJump:function(k){pb=k;pbt=0;}}):null,pb=1,pbt=-1;
+  function step(){if(!br)return;pbt++;if(pbt>=beats){pbt=0;pb++;if(pb>4)pb=1;}br.pos(pb,pbt,true);}
   $('start').addEventListener('click',function(){
-    if(clk){clk.stop();clk.destroy();clk=null;t.stop();DS.ui.label(this,'スタート',{pressed:false});return;}
+    if(clk){clk.stop();clk.destroy();clk=null;t.stop();if(br)br.pos(pb,0,false);DS.ui.label(this,'スタート',{pressed:false});return;}
     if(!DS.clock){t.start();DS.ui.label(this,'ストップ',{pressed:true});return;}
     clk=DS.clock.create({bpm:t.bpm,meter:[beats,4],div:div,sound:false});
+    clk.on('draw',function(p){if(br&&p.head)step();});   // 聞こえた拍で位置を進める
     clk.on('tick',function(tm,p){if(!DS.sound)return;if(p.head)DS.sound.click(p.first&&$('acc').checked,{time:tm,vel:.7});else DS.sound.click(false,{time:tm,vel:.25});});
     clk.start();t.follow(clk);DS.ui.label(this,'ストップ',{pressed:true});});
   t.onChange(function(b){if(clk)clk.set({bpm:b});});
@@ -74,8 +80,8 @@
   $('vol').addEventListener('input',function(e){if(DS.sound&&DS.sound.volume)DS.sound.volume(e.detail.value/100);});
   document.addEventListener('pointerdown',function f(){if(DS.sound&&DS.sound.uiPreload)DS.sound.uiPreload();document.removeEventListener('pointerdown',f,true);},true);
   // 見本の切り替え
-  var BG={'ds-score':['#d8d2c3','#15110e'],'ds-plan':['#cdd5d8','#0e2a44'],'ds-felt':['#d9cdb8','#1a1512'],'ds-note':['#d8dde0','#10171e']},force='';
-  function bg(){var m=['ds-plan','ds-felt','ds-note'].filter(function(k){return app.classList.contains(k);})[0]||'ds-score',dark=force==='ds-night'||(force===''&&matchMedia('(prefers-color-scheme: dark)').matches);document.body.style.background=BG[m][dark?1:0];}
+  var BG={'ds-score':['#d8d2c3','#15110e'],'ds-plan':['#cdd5d8','#0e2a44'],'ds-felt':['#d9cdb8','#1a1512'],'ds-note':['#d8dde0','#10171e'],'ds-studio':['#0b0b0c','#0b0b0c']},force='';
+  function bg(){var m=['ds-plan','ds-felt','ds-note','ds-studio'].filter(function(k){return app.classList.contains(k);})[0]||'ds-score',dark=force==='ds-night'||(force===''&&matchMedia('(prefers-color-scheme: dark)').matches);document.body.style.background=BG[m][dark?1:0];}
   document.querySelectorAll('.bar [data-m]').forEach(function(b){b.onclick=function(){document.querySelectorAll('.bar [data-m]').forEach(function(x){x.classList.toggle('on',x===b);});
     // モチーフを替えたら、部品を作り直す
     location.hash=b.dataset.m;location.reload();};});
