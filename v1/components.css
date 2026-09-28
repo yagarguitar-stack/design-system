@@ -1,7 +1,9 @@
 /* yagarguitar-stack 共通デザイン v1 — 画面の部品（components.css）
-   モチーフは2つ。ツールの一番外の要素に付けて選ぶ：
+   モチーフは4つ。ツールの一番外の要素に付けて選ぶ：
      <div class="ds-ui ds-score">…</div>   楽譜の紙
      <div class="ds-ui ds-plan">…</div>    楽器の設計図
+     <div class="ds-ui ds-felt">…</div>    フェルトの手芸（やわらかい）
+     <div class="ds-ui ds-note">…</div>    こどもの五線ノート（やわらかい）
    夜の見え方は、端末の設定（暗い画面）に合わせて自動で切り替わる。
    ここで決めた文字（Zen Kaku Gothic Antique ほか）は .ds-ui の中だけに効く。今のツールの見た目は変えない。
    名前はすべて ds- で始める（ツールや表示画面の名前とぶつからないように）。
@@ -269,6 +271,133 @@
 .ds-plan.ds-enter .ds-frame{animation:ds-clip 1s var(--ds-ease) both}
 .ds-plan.ds-enter .ds-tb{animation:ds-rise .6s var(--ds-ease) both .6s}
 
+/* ═════════════════ 3　フェルトの手芸（やわらかい） ═════════════════
+   布の地に、ステッチの縁のフェルトの札。ボタンは押すと沈む */
+.ds-felt,.ds-note{--ds-ease:cubic-bezier(.3,1.35,.5,1)}
+.ds-felt{--ds-font:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  --ds-paper:#f1e7d6;--ds-ink:#4a3a2f;--ds-accent:#d2573f;--ds-hi:#e0785c;--ds-on-hi:#fff;--ds-hi-deep:#b95c43;--ds-on:#4f9a6a;
+  --ds-well:#f8f1e4;--ds-f1:#cfe4d2;--ds-f2:#d9e3f2;--ds-f3:#f9d9c6;--ds-stitch:rgba(74,58,47,.38);--ds-faint:rgba(74,58,47,.08);--ds-lift:rgba(0,0,0,.14);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .22 0 0 0 0 .15 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ds-felt .ds-stitch{inset:10px;border:2px dashed var(--ds-stitch);border-radius:20px}
+.ds-felt .ds-foot,.ds-note .ds-foot{left:0;right:0;bottom:26px;text-align:center;font-size:10.5px;letter-spacing:.2em;opacity:.6}
+.ds-felt .ds-hd,.ds-note .ds-hd{text-align:center}
+.ds-felt .ds-ttl{font-weight:900;font-size:26px;letter-spacing:.14em}
+.ds-felt .ds-sub,.ds-note .ds-sub{font-size:11.5px;letter-spacing:.14em;opacity:.7}
+.ds-felt .ds-sec{margin:0 0 16px;padding:20px 18px;border-radius:22px;background:var(--ds-f1);box-shadow:0 3px 0 var(--ds-faint)}
+.ds-felt .ds-sec:nth-of-type(3n+2){background:var(--ds-f2)}
+.ds-felt .ds-sec:nth-of-type(3n){background:var(--ds-f3)}
+.ds-felt .ds-sec::before{content:'';position:absolute;inset:7px;border:2px dashed var(--ds-stitch);border-radius:16px;pointer-events:none}
+.ds-felt .ds-sh,.ds-note .ds-sh{font-size:12.5px;letter-spacing:.14em}
+.ds-felt .ds-sh::before{content:counter(ds-sec);border-radius:50%;width:22px;height:22px;background:var(--ds-well);box-shadow:inset 0 0 0 2px var(--ds-stitch)}
+.ds-felt .ds-sh::after,.ds-note .ds-sh::after{display:none}
+/* ボタン：押すと沈む */
+.ds-felt .ds-btn{background:var(--ds-well);border-radius:16px;box-shadow:0 4px 0 var(--ds-lift);transition:transform .1s,box-shadow .1s,background .15s}
+.ds-felt .ds-btn::before,.ds-note .ds-btn::before{display:none}
+.ds-felt .ds-btn.ds-dn,.ds-felt .ds-btn[aria-pressed="true"]{transform:translateY(3px);box-shadow:0 1px 0 var(--ds-lift);color:var(--ds-ink)!important}
+.ds-felt .ds-btn.ds-danger{color:var(--ds-accent)}
+.ds-felt .ds-btn.ds-danger.ds-dn{color:var(--ds-accent)!important}
+.ds-felt .ds-big{background:var(--ds-hi);color:var(--ds-on-hi);border-radius:31px;box-shadow:0 6px 0 var(--ds-hi-deep);letter-spacing:.3em;text-indent:.3em}
+.ds-felt .ds-big::after{content:'';position:absolute;inset:6px;border:2px dashed rgba(255,255,255,.55);border-radius:26px;pointer-events:none}
+.ds-felt .ds-big.ds-dn,.ds-felt .ds-big[aria-pressed="true"]{transform:translateY(5px);box-shadow:0 1px 0 var(--ds-hi-deep);color:var(--ds-on-hi)!important}
+.ds-felt .ds-btnbar,.ds-note .ds-btnbar{gap:10px}
+.ds-felt .ds-step,.ds-note .ds-step{width:48px;height:48px;border-radius:50%;font-size:22px!important}
+.ds-felt .ds-choice,.ds-note .ds-choice{gap:6px}
+.ds-felt .ds-choice .ds-mk,.ds-note .ds-choice .ds-mk{display:none}
+.ds-felt .ds-choice>button{min-height:42px;border-radius:14px;background:var(--ds-well);box-shadow:0 3px 0 var(--ds-lift);font-weight:700;transition:transform .1s,background .15s,box-shadow .1s}
+.ds-felt .ds-choice>button[aria-checked="true"]{background:var(--ds-hi);color:var(--ds-on-hi);transform:translateY(2px);box-shadow:0 1px 0 var(--ds-lift)}
+.ds-felt .ds-sw,.ds-note .ds-sw{position:relative;width:46px;height:26px;border-radius:13px;flex:0 0 auto;transition:background .2s}
+.ds-felt .ds-sw::after,.ds-note .ds-sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;transition:transform .25s var(--ds-ease)}
+.ds-felt .ds-toggle input:checked~.ds-sw::after,.ds-note .ds-toggle input:checked~.ds-sw::after{transform:translateX(20px)}
+.ds-felt .ds-toggle input:focus-visible~.ds-sw,.ds-note .ds-toggle input:focus-visible~.ds-sw{outline:2px solid var(--ds-accent);outline-offset:3px}
+.ds-felt .ds-sw{background:var(--ds-well);box-shadow:inset 0 0 0 2px var(--ds-stitch)}
+.ds-felt .ds-sw::after{background:var(--ds-ink);opacity:.35}
+.ds-felt .ds-toggle input:checked~.ds-sw{background:var(--ds-on);box-shadow:none}
+.ds-felt .ds-toggle input:checked~.ds-sw::after{background:#fff;opacity:1}
+/* テンポ */
+.ds-felt .ds-mid,.ds-note .ds-mid{flex:1;text-align:center}
+.ds-felt .ds-bpm,.ds-note .ds-bpm{font-size:58px;display:inline-block;padding:0 6px;border-radius:12px}
+.ds-felt .ds-bpm:hover,.ds-note .ds-bpm:hover{background:var(--ds-faint)}
+.ds-felt .ds-bpmin,.ds-note .ds-bpmin{font-size:58px;width:3.4ch;text-align:center;border-bottom:3px solid var(--ds-accent)}
+.ds-felt .ds-u,.ds-note .ds-u{font-size:10px;letter-spacing:.3em;opacity:.6;margin-top:2px}
+.ds-felt .ds-term,.ds-note .ds-term{text-align:center;font-size:12px;opacity:.7;margin-top:6px;letter-spacing:.08em}
+.ds-felt .ds-hint,.ds-note .ds-hint{text-align:center}
+.ds-felt .ds-lane,.ds-note .ds-lane{display:flex;justify-content:center;gap:14px;margin-top:12px;height:24px;align-items:center}
+.ds-felt .ds-lane i,.ds-note .ds-lane i{width:16px;height:16px;border-radius:50%;transition:transform .1s var(--ds-ease),background .08s}
+.ds-felt .ds-lane i{background:var(--ds-well);box-shadow:inset 0 0 0 2px var(--ds-stitch)}
+.ds-felt .ds-lane i.ds-now{background:var(--ds-hi);box-shadow:none;transform:scale(1.3)}
+.ds-felt .ds-lane .ds-ph,.ds-note .ds-lane .ds-ph{display:none}
+/* つまみ・入力欄 */
+.ds-felt .ds-slider .ds-sv,.ds-note .ds-slider .ds-sv{font-weight:700;letter-spacing:.1em}
+.ds-felt .ds-field{background:var(--ds-well);border-radius:14px;padding:8px 14px 4px;box-shadow:inset 0 0 0 2px var(--ds-stitch);transition:box-shadow .2s}
+.ds-felt .ds-field:focus-within{box-shadow:inset 0 0 0 2px var(--ds-hi)}
+.ds-felt .ds-field .ds-fl,.ds-note .ds-field .ds-fl{letter-spacing:.12em;opacity:.75;margin-bottom:0}
+/* 一覧 */
+.ds-felt .ds-rec,.ds-note .ds-rec{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;transition:transform .1s,box-shadow .1s}
+.ds-felt .ds-rec::before,.ds-note .ds-rec::before{display:none}
+.ds-felt .ds-rec.ds-dn,.ds-note .ds-rec.ds-dn{color:var(--ds-ink)}
+.ds-felt .ds-rec i,.ds-note .ds-rec i{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:700}
+.ds-felt .ds-rec b,.ds-note .ds-rec b{font-size:14px}
+.ds-felt .ds-rec small,.ds-note .ds-rec small{display:block;font-size:11px;opacity:.65;font-weight:500}
+.ds-felt .ds-rec span,.ds-note .ds-rec span{font-weight:700;white-space:nowrap}
+.ds-felt .ds-rec{background:var(--ds-well);border-radius:14px;box-shadow:0 3px 0 var(--ds-lift)}
+.ds-felt .ds-rec i{background:var(--ds-f3)}
+.ds-felt .ds-rec.ds-dn{transform:translateY(2px);box-shadow:0 1px 0 var(--ds-lift)}
+/* お知らせ・引き出し */
+.ds-felt .ds-toast{background:var(--ds-ink);color:var(--ds-paper);border-radius:999px;padding:8px 18px;letter-spacing:.06em;box-shadow:0 6px 16px rgba(0,0,0,.2)}
+.ds-felt .ds-toast.ds-ng{background:var(--ds-accent);color:#fff}
+.ds-felt .ds-veil,.ds-note .ds-veil{background:color-mix(in srgb,var(--ds-paper) 65%,transparent)}
+.ds-felt .ds-sheet{border-radius:26px 26px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.18)}
+.ds-felt .ds-sheet::before,.ds-note .ds-sheet::before{content:'';display:block;width:44px;height:5px;border-radius:3px;background:currentColor;opacity:.25;margin:-12px auto 16px}
+/* 開く時：ぽんと出る */
+.ds-felt.ds-enter .ds-sec,.ds-note.ds-enter .ds-sec{animation:ds-pop .55s var(--ds-ease) both}
+.ds-felt.ds-enter .ds-sec:nth-of-type(1),.ds-note.ds-enter .ds-sec:nth-of-type(1){animation-delay:.08s}
+.ds-felt.ds-enter .ds-sec:nth-of-type(2),.ds-note.ds-enter .ds-sec:nth-of-type(2){animation-delay:.16s}
+.ds-felt.ds-enter .ds-sec:nth-of-type(3),.ds-note.ds-enter .ds-sec:nth-of-type(3){animation-delay:.24s}
+.ds-felt.ds-enter .ds-sec:nth-of-type(n+4),.ds-note.ds-enter .ds-sec:nth-of-type(n+4){animation-delay:.3s}
+@keyframes ds-pop{from{opacity:0;transform:translateY(10px) scale(.95)}}
+
+/* ═════════════════ 4　こどもの五線ノート（やわらかい） ═════════════════
+   五線のノートに、テープで札を貼る。ボタンはシールのように縁が立ち、押すとぺたっと沈む */
+.ds-note{--ds-font:"M PLUS Rounded 1c","Zen Maru Gothic","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+  --ds-paper:#fdfcf6;--ds-card:#fffefa;--ds-ink:#3b3834;--ds-accent:#d9534a;--ds-hi:#f0a830;--ds-on-hi:#3b3834;--ds-on:rgba(129,196,164,1);
+  --ds-well:#fffefa;--ds-shadow:#3b3834;--ds-faint:rgba(59,56,52,.07);
+  --ds-staff:rgba(92,150,200,.28);--ds-margin:rgba(226,96,79,.45);--ds-tape1:rgba(246,196,69,.72);--ds-tape2:rgba(129,196,164,.72);--ds-tape3:rgba(240,150,170,.66);
+  background-image:linear-gradient(90deg,transparent 30px,var(--ds-margin) 30px,var(--ds-margin) 31.5px,transparent 31.5px),
+   repeating-linear-gradient(180deg,transparent 0 60px,var(--ds-staff) 60px 61px,transparent 61px 69px,var(--ds-staff) 69px 70px,transparent 70px 78px,var(--ds-staff) 78px 79px,transparent 79px 87px,var(--ds-staff) 87px 88px,transparent 88px 96px,var(--ds-staff) 96px 97px,transparent 97px 130px)}
+.ds-note .ds-margin{display:none}
+.ds-note .ds-ttl{display:inline-block;font-weight:800;font-size:25px;letter-spacing:.12em;padding:2px 14px;background:linear-gradient(transparent 58%,var(--ds-tape1) 58%)}
+.ds-note .ds-sec{margin:0 0 20px;padding:22px 16px 18px;border-radius:6px;background:var(--ds-card);box-shadow:0 1px 0 rgba(0,0,0,.06),0 8px 18px -10px rgba(0,0,0,.3);transform:rotate(-.5deg)}
+.ds-note .ds-sec:nth-of-type(2n){transform:rotate(.45deg)}
+.ds-note .ds-sec::before{content:'';position:absolute;top:-9px;left:50%;width:84px;height:20px;margin-left:-42px;transform:rotate(-3deg);opacity:.95;
+  background:repeating-linear-gradient(45deg,var(--ds-tape1) 0 6px,color-mix(in srgb,var(--ds-tape1) 70%,#fff) 6px 12px)}
+.ds-note .ds-sec:nth-of-type(3n+2)::before{transform:rotate(2deg);background:repeating-linear-gradient(45deg,var(--ds-tape2) 0 6px,color-mix(in srgb,var(--ds-tape2) 70%,#fff) 6px 12px)}
+.ds-note .ds-sec:nth-of-type(3n)::before{background:repeating-linear-gradient(45deg,var(--ds-tape3) 0 6px,color-mix(in srgb,var(--ds-tape3) 70%,#fff) 6px 12px)}
+.ds-note .ds-sheet .ds-sec{transform:none;box-shadow:none;border:2px solid var(--ds-ink)}
+.ds-note .ds-sh::before{content:counter(ds-sec);border:2px solid var(--ds-ink);border-radius:50%;width:22px;height:22px}
+/* シールのボタン：押すとぺたっと沈む */
+.ds-note .ds-btn{background:var(--ds-card);border:2px solid var(--ds-ink);border-radius:12px;box-shadow:3px 3px 0 var(--ds-shadow);transition:transform .08s,box-shadow .08s,background .15s}
+.ds-note .ds-btn.ds-dn,.ds-note .ds-btn[aria-pressed="true"]{transform:translate(3px,3px);box-shadow:0 0 0 var(--ds-shadow);color:var(--ds-ink)!important}
+.ds-note .ds-btn.ds-danger{color:var(--ds-accent);border-color:var(--ds-accent)}
+.ds-note .ds-btn.ds-danger.ds-dn{color:var(--ds-accent)!important}
+.ds-note .ds-big{background:var(--ds-hi);color:var(--ds-on-hi);border-width:2.5px;border-radius:16px;box-shadow:5px 5px 0 var(--ds-shadow);letter-spacing:.3em;text-indent:.3em}
+.ds-note .ds-big.ds-dn,.ds-note .ds-big[aria-pressed="true"]{transform:translate(5px,5px);box-shadow:0 0 0 var(--ds-shadow);color:var(--ds-on-hi)!important}
+.ds-note .ds-choice>button{min-height:42px;border:2px solid var(--ds-ink);border-radius:10px;background:var(--ds-card);box-shadow:2px 2px 0 var(--ds-shadow);font-weight:700;transition:transform .08s,box-shadow .08s,background .15s}
+.ds-note .ds-choice>button[aria-checked="true"]{background:var(--ds-hi);color:var(--ds-on-hi);transform:translate(2px,2px);box-shadow:0 0 0 var(--ds-shadow)}
+.ds-note .ds-sw{border:2px solid var(--ds-ink);background:var(--ds-card)}
+.ds-note .ds-sw::after{top:1px;left:1px;background:var(--ds-ink)}
+.ds-note .ds-toggle input:checked~.ds-sw{background:var(--ds-tape2)}
+.ds-note .ds-bpm{font-weight:800}
+.ds-note .ds-lane i{border:2px solid var(--ds-ink);background:var(--ds-card)}
+.ds-note .ds-lane i.ds-now{background:var(--ds-hi);transform:scale(1.25) rotate(8deg);border-radius:30% 50% 40% 50%}
+.ds-note .ds-field{border:2px solid var(--ds-ink);border-radius:10px;padding:8px 12px 4px;background:var(--ds-card);box-shadow:2px 2px 0 var(--ds-shadow);transition:box-shadow .15s}
+.ds-note .ds-field:focus-within{box-shadow:3px 3px 0 var(--ds-hi)}
+.ds-note .ds-rec{border:2px solid var(--ds-ink);border-radius:12px;background:var(--ds-card);box-shadow:3px 3px 0 var(--ds-shadow)}
+.ds-note .ds-rec i{border:2px solid var(--ds-ink)}
+.ds-note .ds-rec.ds-dn{transform:translate(3px,3px);box-shadow:0 0 0 var(--ds-shadow)}
+.ds-note .ds-toast{background:var(--ds-hi);color:var(--ds-on-hi);border:2px solid var(--ds-ink);border-radius:12px;padding:6px 16px;box-shadow:3px 3px 0 var(--ds-shadow);letter-spacing:.06em}
+.ds-note .ds-toast.ds-ng{background:var(--ds-accent);color:#fff}
+.ds-note .ds-sheet{border-radius:18px 18px 0 0;border-top:2px solid var(--ds-ink);background:var(--ds-card)}
+
 /* ═════════════════ 夜（端末の設定が暗い時） ═════════════════
    見本用に .ds-night で強制でき、.ds-day で昼に固定できる */
 @media (prefers-color-scheme: dark){
@@ -276,7 +405,11 @@
   .ds-plan:not(.ds-day){--ds-paper:#1d4a73;--ds-ink:#eaf2f8;--ds-accent:#ffd166;--ds-grid:rgba(234,242,248,.16);--ds-grid2:rgba(234,242,248,.06)}
   .ds-score:not(.ds-day){background-image:radial-gradient(120% 80% at 50% -10%,rgba(255,220,170,.07),transparent 55%)}
   .ds-score:not(.ds-day) .ds-veil{background:rgba(34,28,23,.74)}
+  .ds-felt:not(.ds-day){--ds-paper:#2b241f;--ds-ink:#f5ecdd;--ds-accent:#f58f78;--ds-hi:#f2997b;--ds-on-hi:#2b241f;--ds-hi-deep:#a85a44;--ds-on:#86d3a0;--ds-well:#3a302a;--ds-f1:#2f4a3f;--ds-f2:#2f3f5c;--ds-f3:#5a3a33;--ds-stitch:rgba(245,236,221,.5);--ds-faint:rgba(0,0,0,.3);--ds-lift:rgba(0,0,0,.4)}
+  .ds-note:not(.ds-day){--ds-paper:#1c2733;--ds-card:#26333f;--ds-well:#26333f;--ds-ink:#f1efe6;--ds-accent:#f7a08f;--ds-hi:#f6c35a;--ds-on-hi:#1c2733;--ds-shadow:#0d141b;--ds-faint:rgba(241,239,230,.08);--ds-staff:rgba(160,200,235,.2);--ds-margin:rgba(247,160,143,.45);--ds-tape1:rgba(246,196,69,.78);--ds-tape2:rgba(129,206,170,.72);--ds-tape3:rgba(245,160,180,.7)}
 }
+.ds-felt.ds-night{--ds-paper:#2b241f;--ds-ink:#f5ecdd;--ds-accent:#f58f78;--ds-hi:#f2997b;--ds-on-hi:#2b241f;--ds-hi-deep:#a85a44;--ds-on:#86d3a0;--ds-well:#3a302a;--ds-f1:#2f4a3f;--ds-f2:#2f3f5c;--ds-f3:#5a3a33;--ds-stitch:rgba(245,236,221,.5);--ds-faint:rgba(0,0,0,.3);--ds-lift:rgba(0,0,0,.4)}
+.ds-note.ds-night{--ds-paper:#1c2733;--ds-card:#26333f;--ds-well:#26333f;--ds-ink:#f1efe6;--ds-accent:#f7a08f;--ds-hi:#f6c35a;--ds-on-hi:#1c2733;--ds-shadow:#0d141b;--ds-faint:rgba(241,239,230,.08);--ds-staff:rgba(160,200,235,.2);--ds-margin:rgba(247,160,143,.45);--ds-tape1:rgba(246,196,69,.78);--ds-tape2:rgba(129,206,170,.72);--ds-tape3:rgba(245,160,180,.7)}
 .ds-score.ds-night{--ds-paper:#221c17;--ds-ink:#ebe1cc;--ds-accent:#e08a78;--ds-faint:rgba(235,225,204,.08);background-image:radial-gradient(120% 80% at 50% -10%,rgba(255,220,170,.07),transparent 55%)}
 .ds-score.ds-night .ds-veil{background:rgba(34,28,23,.74)}
 .ds-plan.ds-night{--ds-paper:#1d4a73;--ds-ink:#eaf2f8;--ds-accent:#ffd166;--ds-grid:rgba(234,242,248,.16);--ds-grid2:rgba(234,242,248,.06)}
