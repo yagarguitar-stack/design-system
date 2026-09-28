@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>リズム譜 — 見本</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  body{font-family:var(--font-body,sans-serif);margin:0;padding:16px;max-width:820px;margin-inline:auto;line-height:1.7;background:#efebe2;color:#1c1a17}
+  h1{font-family:var(--font-head,serif);font-size:1.4rem;margin:0 0 4px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0 14px;font-size:13px}
+  button,select,input{font:inherit;font-size:13px;padding:4px 10px;border:1px solid #bfb3a0;border-radius:6px;background:#fff}
+  .ex{background:#fffdf8;border:1px solid #d9d2c3;border-radius:10px;padding:10px 12px;margin:10px 0}
+  .ex .h{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:#6b4a12;margin-bottom:4px}
+  .ex code{font-size:12px;color:#5d574c;font-weight:400}
+  .err{color:#a03020;font-size:12px}
+  #tapv{font-weight:700}
+</style></head><body>
+<h1>リズム譜（rhythm.js）の見本</h1>
+<div class="bar">
+  <label>間隔 <select id="sp"><option value="time">時間に比例</option><option value="engraved">楽譜らしい間隔</option></select></label>
+  <label>テンポ <input id="bpm" type="number" value="90" min="30" max="240" style="width:5em"></label>
+  <label><input type="checkbox" id="metro" checked> クリック</label>
+</div>
+<div id="list"></div>
+<div class="ex"><div class="h">升目から（ことりノームの形・16分）<button data-k="grid">再生</button></div><div id="grid"></div>
+  <div class="bar" style="margin:6px 0 0">タップして合わせる：<button id="tap">ここをタップ</button> <span id="tapv">—</span></div></div>
+<script src="sound.js"></script>
+<script src="clock.js"></script>
+<script src="rhythm.js"></script>
+<script>
+(function(){
+  if(!window.DS||!DS.rhythm){document.body.insertAdjacentHTML('afterbegin','<p class="err">rhythm.js を読み込めませんでした。同じフォルダに置いてください。</p>');return;}
+  var R=DS.rhythm,$=function(id){return document.getElementById(id);};
+  var EX=[
+    ['基本','4/4 q 8 8 qr 16 16 16 16 | 3(8 8 8) 8. 16 8r 8~ q'],
+    ['付点・タイ・シンコペーション','4/4 q. 8 8 q 8 | h~ 8 8 q'],
+    ['32分・アクセント','4/4 32 32 32 32 32 32 32 32 16 16 8 q> 8> 8r'],
+    ['5連・6連・4分の3連','4/4 5(16 16 16 16 16) 6(16 16 16 16 16 16) 3(q q q)'],
+    ['6/8','6/8 8 8 8 8. 16 8 | q. 8 8r 8 | 3/4 q q q'],
+    ['7/8（2+2+3）','7/8:2+2+3 8 8 8 8 8 8 8 | q 16 16 8 8 8 8'],
+    ['休みの小節・付点2分休符','4/4 wr | 3/4 h.r | q qr q'],
+    ['長い譜面（段の折り返し）','4/4 q q 8 8 q | 16 16 16 16 q h | 8 8 8 8 q q | 3(8 8 8) 3(8 8 8) h | q qr h | w']
+  ];
+  var views={},cur=null;
+  function draw(){
+    var list=$('list');list.innerHTML='';
+    EX.forEach(function(e,i){var d=document.createElement('div');d.className='ex';
+      d.innerHTML='<div class="h"><span>'+e[0]+' <code>'+e[1]+'</code></span><button data-k="e'+i+'">再生</button></div><div id="e'+i+'"></div><div class="err" id="er'+i+'"></div>';list.appendChild(d);
+      views['e'+i]=R.render('e'+i,e[1],{spacing:$('sp').value});$('er'+i).textContent=views['e'+i].errors.join(' / ');});
+    var pat=[1,0,1,0, 1,1,1,1, 0,0,1,0, 1,0,0,0, 1,0,0,1, 0,0,1,0, 1,1,0,1, 1,0,0,0];
+    views.grid=R.render('grid',R.fromGrid(pat,{div:4,ts:[4,4]}),{spacing:$('sp').value});
+    bind();
+  }
+  function bind(){document.querySelectorAll('button[data-k]').forEach(function(b){b.onclick=function(){
+    if(cur){cur.p.stop();var was=cur.b;cur.b.textContent='再生';cur=null;if(was===b)return;}
+    var p=R.play(views[b.dataset.k],{bpm:+$('bpm').value||90,countIn:1,metronome:$('metro').checked,onEnd:function(){b.textContent='再生';cur=null;}});
+    cur={p:p,b:b};b.textContent='止める';};});}
+  $('sp').onchange=draw;
+  $('tap').onpointerdown=function(e){if(!cur)return;var r=cur.p.judge(e);if(!r)return;$('tapv').textContent=r.diff===0?'ぴったり':(r.diff>0?r.diff+'ms 遅い':(-r.diff)+'ms 早い');};
+  draw();
+})();
+</script></body></html>

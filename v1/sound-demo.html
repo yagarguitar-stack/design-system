@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>楽器の音の確認</title>
+<link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="colors.css"><link rel="stylesheet" href="scale.css"><link rel="stylesheet" href="motion.css">
+<style>
+body{margin:0;background:var(--c-bg);color:var(--c-text);font-family:var(--font-body);}
+.wrap{max-width:720px;margin:0 auto;padding:var(--sp-5) var(--sp-4);}
+h1{font-family:var(--font-sign);font-weight:400;color:var(--c-accent);margin:0 0 var(--sp-2);font-size:var(--fs-2xl);}
+p{color:var(--c-text-sub);font-size:var(--fs-md);}
+section{background:var(--c-panel);border-radius:var(--r-lg);padding:var(--sp-4);margin-top:var(--sp-3);}
+h2{font-family:var(--font-head);color:var(--c-accent);font-size:var(--fs-lg);margin:0 0 var(--sp-3);}
+.row{display:flex;flex-wrap:wrap;gap:var(--sp-2);}
+button{font-family:var(--font-body);font-weight:700;font-size:var(--fs-md);color:#3a2807;background:var(--brass-light);border:none;border-bottom:3px solid #8a6517;border-radius:var(--r-md);padding:10px 16px;cursor:pointer;}
+#st{font-size:var(--fs-sm);color:var(--c-text-muted);}
+</style></head><body><div class="wrap">
+<h1>SOUND</h1><p>共通の楽器の音の確認用ページです。ボタンを押すと鳴ります。</p><p id="st">読み込み中…</p>
+<section><h2>アコギ</h2><div class="row"><button class="ds-shine" onclick="chordDemo('acoustic')">コード</button><button class="ds-shine" onclick="scale('acoustic','E2')">音階</button></div></section>
+<section><h2>ナイロン</h2><div class="row"><button class="ds-shine" onclick="chordDemo('nylon')">コード</button><button class="ds-shine" onclick="scale('nylon','E2')">音階</button></div></section>
+<section><h2>エレキ</h2><div class="row"><button class="ds-shine" onclick="chordDemo('electric')">コード</button><button class="ds-shine" onclick="scale('electric','E2')">音階</button></div></section>
+<section><h2>ピアノ</h2><div class="row"><button class="ds-shine" onclick="DS.sound.chord('piano',['C3','G3','C4','E4','G4'],{dur:2})">和音</button><button class="ds-shine" onclick="scale('piano','C4')">音階</button></div></section>
+<section><h2>ベース</h2><div class="row"><button class="ds-shine" onclick="bassLine()">ライン</button><button class="ds-shine" onclick="scale('bass','E1')">音階</button></div></section>
+<section><h2>ドラム・クリック</h2><div class="row"><button class="ds-shine" onclick="beat()">8ビート</button><button class="ds-shine" onclick="metro()">クリック</button></div></section>
+<div id="cred"></div></div>
+<script src="motion.js"></script><script src="sound.js"></script>
+<script>
+document.getElementById('cred').innerHTML=DS.sound.creditsHtml(DS.sound.instruments);
+DS.sound.load(DS.sound.instruments).then(function(){document.getElementById('st').textContent='準備ができました';}).catch(function(e){document.getElementById('st').textContent=e.message;});
+function chordDemo(i){var t=DS.sound.now()+.05;DS.sound.chord(i,['G2','B2','D3','G3','B3','G4'],{time:t,dur:1.2});DS.sound.chord(i,['C3','E3','G3','C4','E4'],{time:t+1.3,dur:1.2});DS.sound.chord(i,['D3','A3','D4','F#4'],{time:t+2.6,dur:1.5,up:true});}
+function scale(i,root){var r=DS.sound.midi(root),s=[0,2,4,5,7,9,11,12],t=DS.sound.now()+.05;s.forEach(function(x,k){DS.sound.play(i,r+x,{time:t+k*.3,dur:.35});});}
+function bassLine(){var t=DS.sound.now()+.05;['E1','E1','G1','A1','A1','B1','D2','E2'].forEach(function(n,k){DS.sound.play('bass',n,{time:t+k*.3,dur:k<7?.28:1});});}
+function beat(){var t=DS.sound.now()+.05,b=.6;for(var bar=0;bar<2;bar++){var t0=t+bar*4*b;for(var e=0;e<8;e++)DS.sound.drum('hihat',{time:t0+e*b/2,vel:e%2?.55:.7});
+  DS.sound.drum('kick',{time:t0});DS.sound.drum('kick',{time:t0+2*b});DS.sound.drum('kick',{time:t0+2.5*b,vel:.7});DS.sound.drum('snare',{time:t0+b});DS.sound.drum('snare',{time:t0+3*b});}
+  DS.sound.drum('crash',{time:t+8*b});DS.sound.drum('kick',{time:t+8*b});}
+function metro(){var t=DS.sound.now()+.05;for(var k=0;k<8;k++)DS.sound.click(k%4===0,{time:t+k*.6});}
+</script></body></html>

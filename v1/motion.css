@@ -1,0 +1,33 @@
+/* yagarguitar-stack 共通デザイン v1 — 押したときの動き
+   大きなボタン：光が走る ／ 札：裏返る ／ 切り替え：ランプ ／ 注意のボタン：長押しで確定 */
+
+/* ---- 大きなボタン：光が走る（押し込みつき） ---- */
+.ds-shine{position:relative;overflow:hidden;transition:transform .08s,box-shadow .08s;}
+.ds-shine:active{transform:translateY(3px);box-shadow:0 0 0 transparent;}
+.ds-shine-go::after{content:'';position:absolute;top:-30%;bottom:-30%;left:-50px;width:28px;background:rgba(255,255,255,.7);transform:skewX(-22deg);animation:dsShine .55s ease-out forwards;pointer-events:none;}
+@keyframes dsShine{to{left:calc(100% + 40px);}}
+
+/* ---- 札：裏返る ---- */
+.ds-flip-go{animation:dsFlip .42s ease-in-out !important;}
+@keyframes dsFlip{from{transform:perspective(500px) rotateY(0);}to{transform:perspective(500px) rotateY(360deg);}}
+
+/* ---- 切り替え：ランプ ----
+   <label class="ds-lamp"><input type="checkbox"><span class="ds-led"></span><span>文言</span></label> */
+.ds-lamp{position:relative;display:inline-flex;align-items:center;gap:9px;cursor:pointer;user-select:none;-webkit-user-select:none;background:var(--c-panel-2,#2c1d11);border:1px solid var(--wood-light,#5a3d22);border-radius:var(--r-md,8px);padding:9px 16px 9px 13px;transition:transform .08s;}
+.ds-lamp:active{transform:translateY(2px);}
+.ds-lamp input{position:absolute;opacity:0;width:0;height:0;}
+.ds-led{width:11px;height:11px;border-radius:50%;background:#4a1810;border:1px solid rgba(0,0,0,.6);flex:0 0 auto;transition:background .12s,box-shadow .12s;}
+.ds-lamp input:checked + .ds-led{background:#ff5a3a;box-shadow:0 0 0 3px rgba(255,90,58,.28),0 0 10px rgba(255,90,58,.6);}
+.ds-lamp input:focus-visible + .ds-led{outline:2px solid var(--brass-light,#e8c468);outline-offset:3px;}
+
+/* ---- 注意のボタン：長押しで確定 ---- */
+.ds-hold{position:relative;overflow:hidden;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+.ds-hold::after{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(0,0,0,.4);pointer-events:none;transition:width .2s;}
+.ds-hold.ds-holding::after{width:100%;transition:width var(--ds-hold-ms,1s) linear;}
+.ds-shake{animation:dsShake .45s linear;}
+@keyframes dsShake{10%{transform:translateX(-4px);}20%{transform:translateX(4px);}30%{transform:translateX(-3px);}40%{transform:translateX(3px);}55%{transform:translateX(-1px);}70%{transform:translateX(1px);}}
+.ds-bubble{position:fixed;z-index:9999;transform:translate(-50%,-100%);background:var(--oil,#160d06);color:var(--paper,#e8dcc0);border:1px solid var(--brass,#c8962e);border-radius:var(--r-md,8px);padding:6px 11px;font-size:var(--fs-sm,12px);white-space:nowrap;pointer-events:none;animation:dsBubble 1.6s ease forwards;}
+@keyframes dsBubble{0%{opacity:0;margin-top:4px;}12%,80%{opacity:1;margin-top:0;}100%{opacity:0;}}
+
+/* 端末で「動きを減らす」を選んでいる方には控えめに */
+@media (prefers-reduced-motion: reduce){.ds-shine-go::after,.ds-flip-go,.ds-shake{animation:none !important;}}

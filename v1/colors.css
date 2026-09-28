@@ -1,0 +1,28 @@
+/* yagarguitar-stack 共通デザイン v1 — 色 */
+:root{
+  /* ---- 色：素材（工房の材料そのもの） ---- */
+  --paper:#e8dcc0; --paper-dim:#cdbc97;
+  --brass:#c8962e; --brass-light:#e8c468;
+  --wood:#3d2a18;  --wood-light:#5a3d22;
+  --oil:#160d06;   --steel:#8a8f96;
+  --green:#3f6b4a; --amber:#c08018; --red:#9c3320;
+  --shadow:rgba(0,0,0,.5);
+
+  /* ---- 色：役割（画面ではこちらを使う） ---- */
+  --c-bg:#0a0604;            /* 画面のいちばん奥 */
+  --c-panel:#241710;         /* パネル */
+  --c-panel-2:#2c1d11;       /* パネルの中の段 */
+  --c-panel-3:#33230f;       /* 明るめの段 */
+  --c-well:var(--oil);       /* 入力欄などのくぼみ */
+  --c-text:var(--paper);     /* 本文 */
+  --c-text-sub:var(--paper-dim);
+  --c-text-muted:var(--steel);
+  --c-accent:var(--brass-light);
+  --c-accent-deep:var(--brass);
+  --c-ok:#7fc98c;  --c-ok-bright:#8fd49b; --c-ok-pale:#c6f2cf;
+  --c-warn:#e9a05a;
+  --c-danger:#b8472b;
+  --c-line:rgba(0,0,0,.3);
+  --c-line-accent:rgba(232,196,104,.28);
+
+}

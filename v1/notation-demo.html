@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>五線譜と指板の確認</title>
+<link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="colors.css"><link rel="stylesheet" href="scale.css">
+<style>
+body{margin:0;background:var(--c-bg);color:var(--c-text);font-family:var(--font-body);}
+.wrap{max-width:900px;margin:0 auto;padding:var(--sp-5) var(--sp-4);}
+h1{font-family:var(--font-sign);font-weight:400;color:var(--c-accent);margin:0 0 var(--sp-2);font-size:var(--fs-2xl);}
+h2{font-family:var(--font-head);color:var(--c-accent);font-size:var(--fs-lg);margin:var(--sp-5) 0 var(--sp-2);}
+.paper{background:#fff;border-radius:var(--r-md);padding:var(--sp-2);overflow-x:auto;}
+.board{background:var(--c-panel);border-radius:var(--r-md);padding:var(--sp-3);}
+.row{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin:var(--sp-2) 0;}
+button{font-family:var(--font-body);font-size:var(--fs-sm);color:var(--c-text);background:var(--c-panel-2);border:1px solid var(--wood-light);border-radius:var(--r-pill);padding:6px 12px;cursor:pointer;}
+button.on{background:var(--brass-light);color:#3a2807;border-color:var(--brass-light);}
+#hit{font-size:var(--fs-sm);color:var(--c-text-sub);}
+</style></head><body><div class="wrap">
+<h1>NOTATION</h1>
+<h2>五線譜＋TAB譜</h2><div class="paper" id="sys"></div>
+<h2>指板（押すと場所が出ます）</h2>
+<div class="row" id="opts"></div>
+<div class="board" id="fb"></div><p id="hit"></p>
+</div>
+<script src="notation.js"></script><script src="fretboard.js"></script>
+<script>
+if(!window.SLDraw||!window.DS||!DS.fret){document.querySelector('.wrap').insertAdjacentHTML('afterbegin','<p style="background:#fff4e5;color:#5a3000;padding:12px;border-radius:8px">notation.js と fretboard.js を読み込めませんでした。このページは design-system の v1 フォルダの中で開いてください。</p>');throw new Error('部品が読み込めません');}
+var T=SLDraw.T,Q=T.QUARTER,E8=T.EIGHTH;
+function n(st,len,s,f){return {start:st,len:len,stops:[{s:s,f:f}]};}
+var b1={ts:{n:4,d:4},ks:0,notes:[n(0,Q,5,0),n(Q,Q,5,0),n(2*Q,Q,5,1),n(3*Q,Q,5,3)]};
+var b2={ts:{n:4,d:4},ks:0,notes:[n(0,Q,5,3),n(Q,Q,5,1),n(2*Q,Q,5,0),n(3*Q,Q,4,3)]};
+var b3={ts:{n:4,d:4},ks:0,notes:[n(0,E8,3,0),n(E8,E8,3,2),n(2*E8,E8,4,0),n(3*E8,E8,4,1),n(4*E8,E8,4,3),n(5*E8,E8,5,0),{start:6*E8,len:Q,stops:[{s:5,f:0},{s:4,f:1},{s:3,f:0}]}]};
+SLDraw.ready().then(function(){document.getElementById('sys').innerHTML=SLDraw.renderSystem([b1,b2,b3],{SP:11,W:280}).svg;});
+var O={wood:'ebony',colorMode:'pc',spacing:'even',names:'en'};
+var CH=[['wood',[['ebony','エボニー'],['rose','ローズウッド'],['maple','メイプル']]],['colorMode',[['pc','音名ごと'],['deg','度数ごと'],['mono','1色']]],['spacing',[['even','均等'],['real','本物の比率']]],['names',[['en','English'],['it','イタリア語']]]];
+var NOTES=[];[[5,0],[5,1],[5,3],[4,0],[4,1],[4,3],[3,0],[3,2],[2,0],[2,2],[2,3],[1,3]].forEach(function(p){NOTES.push({s:p[0],f:p[1]});});
+NOTES[4].ring=true;
+function opt(){return Object.assign({frets:12,theme:'dark',notes:NOTES,root:0,hit:true},O);}
+function draw(){
+  document.getElementById('fb').innerHTML=DS.fret.svg(opt());
+  var h='';CH.forEach(function(c){c[1].forEach(function(v){h+='<button class="'+(O[c[0]]===v[0]?'on':'')+'" data-k="'+c[0]+'" data-v="'+v[0]+'">'+v[1]+'</button>';});});
+  document.getElementById('opts').innerHTML=h;
+}
+document.getElementById('opts').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;O[b.dataset.k]=b.dataset.v;draw();});
+document.getElementById('fb').addEventListener('click',function(e){var svg=e.target.closest('svg');if(!svg)return;var p=DS.fret.hitAt(svg,e.clientX,e.clientY,opt());
+  document.getElementById('hit').textContent=p?(6-p.s)+'弦 '+(p.f===0?'開放':p.f+'フレット')+'（'+DS.fret.noteName((DS.fret.OPEN[p.s]+p.f)%12,O)+'）':'';});
+draw();
+</script></body></html>
