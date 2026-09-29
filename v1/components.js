@@ -5,6 +5,7 @@
      フェルトとノートは、やわらかい見た目のモチーフ。文字（Zen Maru Gothic／M PLUS Rounded 1c）は使う時だけ読み込む
      ds-studio（録音スタジオの卓）は ScoreLine 系の道具のモチーフ。仕上げは data-ds-finish="night"（夜のスタジオ・既定）／"vintage"（ヴィンテージの卓）／"digital"（現代のデジタル卓）
        いつも同じ色（端末の暗い設定では変わらない）。中央の表示 DS.ui.bridge で「再生の位置」と「曲の地図」を押して切り替える
+     ds-chart（真鍮の羅針盤と海図）は ScoreLineCompass のモチーフ。いつも同じ色。中央の表示 DS.ui.compass は再生バーと同じ働き（針で位置、小旗で始める位置）
      足元の文字（楽譜の紙・フェルト・ノート）：data-ds-foot="百合ヶ丘ギター教室"
      楽譜の紙の足元の文字：data-ds-foot="百合ヶ丘ギター教室"
      設計図の表題欄：data-ds-title="メトロノーム" data-ds-dwg="MT-01" data-ds-scale="1 : 1"
@@ -32,9 +33,9 @@
   var SW='<svg class="ds-tg" viewBox="0 0 46 20" aria-hidden="true"><path d="M0 10H10M36 10H46" stroke="currentColor" stroke-width="1.25"/><circle cx="12" cy="10" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/><circle cx="34" cy="10" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/><path class="ds-lever" d="M14 10H32" stroke="currentColor" stroke-width="1.6"/></svg>';
   function h(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
   function rootOf(el){return el&&el.closest?el.closest('.ds-ui'):null;}
-  function motif(el){var r=rootOf(el)||el;if(!r||!r.classList)return 'score';var c=r.classList;return c.contains('ds-plan')?'plan':c.contains('ds-felt')?'felt':c.contains('ds-note')?'note':c.contains('ds-studio')?'studio':'score';}
+  function motif(el){var r=rootOf(el)||el;if(!r||!r.classList)return 'score';var c=r.classList;return c.contains('ds-plan')?'plan':c.contains('ds-felt')?'felt':c.contains('ds-note')?'note':c.contains('ds-studio')?'studio':c.contains('ds-chart')?'chart':'score';}
   function soft(el){var m=motif(el);return m==='felt'||m==='note';}   // やわらかいモチーフ（フェルト・ノート）
-  function flat(el){var m=motif(el);return m==='felt'||m==='note'||m==='studio';}   // 部品の組み立てがやわらかい側と同じもの（スタジオの卓を含む）
+  function flat(el){var m=motif(el);return m==='felt'||m==='note'||m==='studio'||m==='chart';}   // 部品の組み立てがやわらかい側と同じもの（スタジオの卓・海図台を含む）
   function pad2(n){return String(n).padStart(2,'0');}
   function fire(el,type,detail){el.dispatchEvent(new CustomEvent(type,{bubbles:true,detail:detail}));}
 
@@ -59,7 +60,7 @@
   function frame(r){
     if(r.querySelector(':scope>.ds-deco'))return;
     var M=motif(r);
-    if(M==='studio'){ /* 卓は枠の飾りを付けない（上の棚と下の卓はツール側で組む） */ }
+    if(M==='studio'||M==='chart'){ /* 卓・海図台は枠の飾りを付けない（上の棚と下の卓はツール側で組む） */ }
     else if(M==='felt'||M==='note'){
       r.insertBefore(h('div','ds-deco '+(M==='felt'?'ds-stitch':'ds-margin')),r.firstChild);
       var ft2=r.getAttribute('data-ds-foot');if(ft2!=null){var f2=h('div','ds-deco ds-foot');f2.appendChild(h('span',null)).textContent=ft2;r.appendChild(f2);}
@@ -197,7 +198,7 @@
   function dynOf(t){return t<.15?'pp':t<.35?'p':t<.5?'mp':t<.65?'mf':t<.85?'f':'ff';}
   function slider(el){
     if(typeof el==='string')el=document.querySelector(el);if(!el)return null;if(el._dss)return el._dss;
-    var S=motif(el)==='score',SO=soft(el),ST=motif(el)==='studio',min=+(el.getAttribute('data-min')||0),max=+(el.getAttribute('data-max')||100),val=+(el.getAttribute('data-value')||min),dyn=el.hasAttribute('data-ds-dyn');
+    var S=motif(el)==='score',SO=soft(el),ST=motif(el)==='studio'||motif(el)==='chart',min=+(el.getAttribute('data-min')||0),max=+(el.getAttribute('data-max')||100),val=+(el.getAttribute('data-value')||min),dyn=el.hasAttribute('data-ds-dyn');
     el.setAttribute('role','slider');el.tabIndex=0;el.setAttribute('aria-valuemin',min);el.setAttribute('aria-valuemax',max);
     var box=h('div'),sv=h('div','ds-sv');el.appendChild(box);el.appendChild(sv);
     function svg(t){
@@ -305,10 +306,110 @@
     var api={pos:function(bar,beat,play){st.bar=bar;st.beat=beat||0;st.play=!!play;draw();},set:function(n){for(var k in n)st[k]=n[k];build();},view:function(v){if(v){view=v;draw();}return view;}};
     el._dsb=api;return api;
   }
+  var chartFont=false;
+  function loadChartFont(){if(chartFont)return;chartFont=true;var l=document.createElement('link');l.rel='stylesheet';
+    l.href='https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap';document.head.appendChild(l);}
+  /* ── 中央の表示（羅針盤と海図）：下の再生バーと同じ働き ──
+     var c=DS.ui.compass('#id',{onSeek:function(秒,決まったか){…},onCue:function(秒,決まったか){…}});
+     c.set({bars:[{t:始まりの秒,dur:長さの秒,nb:拍の数},…],total:曲の長さの秒,marks:[{bar:0から数えた小節,name:'サビ'},…]}) で曲の形を渡す
+     c.pos(秒) で今の位置、c.cue(秒) で始める位置を知らせる（毎フレーム呼んでよい。変わった所だけ描き直す）
+     針をつまんで回す・地図の船を引くと onSeek（動かしている間は false、離した時に true）。
+     縁の小旗を引くと onCue。見え方（羅針盤／曲の地図）は端末に覚える */
+  function compass(el,o){
+    if(typeof el==='string')el=document.querySelector(el);if(!el)return null;if(el._dsc2)return el._dsc2;
+    o=o||{};loadChartFont();var KEY='ds_compass_view',NS='http://www.w3.org/2000/svg';
+    var view='pos';try{view=localStorage.getItem(KEY)==='map'?'map':'pos';}catch(e){}
+    var st={bars:[{t:0,dur:1,nb:4}],total:1,marks:[]},now=0,cue=0,drag=null,last={};
+    el.classList.add('ds-compass');el.setAttribute('role','group');el.setAttribute('aria-label','再生の位置');
+    function n(){return st.bars.length;}
+    function toFb(t){var B=st.bars,i=0;while(i+1<B.length&&B[i+1].t<=t)i++;return i+Math.max(0,Math.min(1,(t-B[i].t)/Math.max(.001,B[i].dur)));}
+    function toSec(f){var B=st.bars;f=Math.max(0,Math.min(B.length-1e-4,f));var i=Math.floor(f);return B[i].t+(f-i)*B[i].dur;}
+    function ang(f){return f/n()*360;}
+    function arc(r,a0,a1){function p(a){return [Math.sin(a*Math.PI/180)*r,-Math.cos(a*Math.PI/180)*r];}var s=p(a0),e=p(a1);return 'M'+s[0].toFixed(2)+' '+s[1].toFixed(2)+'A'+r+' '+r+' 0 '+(a1-a0>180?1:0)+' 1 '+e[0].toFixed(2)+' '+e[1].toFixed(2);}
+    function segs(){var m=st.marks.slice().sort(function(a,b){return a.bar-b.bar;}),out=[];if(!m.length||m[0].bar>0)out.push({i0:0,i1:m.length?m[0].bar:n(),t:''});
+      m.forEach(function(x,k){out.push({i0:x.bar,i1:m[k+1]?m[k+1].bar:n(),t:x.name});});return out;}
+    var W=420,H=46;function mx(f){return 14+f*(W-28)/Math.max(1,n());}function my(f){return H*.56+Math.sin(f*1.3)*4;}
+    function dial(){
+      var N=n(),g='',cols=['#b8382a','#2f6f7a','#7a5a2a','#4f5d8a'],k,i;
+      g+='<defs><radialGradient id="dsCB" cx=".35" cy=".3"><stop offset="0" stop-color="#fff2c8"/><stop offset=".45" stop-color="#d4ae62"/><stop offset=".85" stop-color="#8a6628"/><stop offset="1" stop-color="#5a4016"/></radialGradient>'+
+        '<radialGradient id="dsCF" cx=".5" cy=".4"><stop offset="0" stop-color="#fbf4e2"/><stop offset=".8" stop-color="#e8dcc0"/><stop offset="1" stop-color="#c9b88e"/></radialGradient>'+
+        '<linearGradient id="dsCG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".45" stop-color="#fff" stop-opacity=".05"/><stop offset=".46" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'+
+        '<circle r="45" fill="url(#dsCB)"/><circle r="40.5" fill="#3b2a0c"/><circle r="40" fill="url(#dsCF)"/>';
+      segs().forEach(function(s,j){if(s.i1>s.i0)g+='<path d="'+arc(36.5,ang(s.i0)+(N>1?1:0),ang(s.i1)-(N>1?1:.01))+'" fill="none" stroke="'+(s.t?cols[j%cols.length]:'#b8a67c')+'" stroke-width="3.2"/>';});
+      g+='<path class="ds-cdone" d="" fill="none" stroke="#fff6d6" stroke-opacity=".55" stroke-width="3.2"/>';
+      for(i=0;i<N;i++)g+='<line y1="-40" y2="-38.6" stroke="#3b2a0c" stroke-width=".7" transform="rotate('+ang(i)+')"/>';
+      var step=N<=16?1:N<=32?4:8;
+      for(i=0;i<N;i+=step)g+='<text transform="rotate('+ang(i+.5)+') translate(0 -29.8)" text-anchor="middle" font-family="Cormorant Garamond,serif" font-weight="700" font-size="6.4" fill="#3b2a0c">'+(i+1)+'</text>';
+      g+='<circle r="24" fill="none" stroke="#3b2a0c" stroke-width=".4"/>';
+      [0,90,180,270].forEach(function(a){g+='<path d="M0-22L3.2-3.2L0 0Z" fill="#3b2a0c" transform="rotate('+a+')"/><path d="M0-22L-3.2-3.2L0 0Z" fill="#8a6628" transform="rotate('+a+')"/>';});
+      [45,135,225,315].forEach(function(a){g+='<path d="M0-13L2-2L-2-2Z" fill="#8a6628" transform="rotate('+a+')"/>';});
+      g+='<g class="ds-cneedle"><path d="M0-27L3.6 0L0 3L-3.6 0Z" fill="#a8261a" stroke="#4a0f08" stroke-width=".4"/><path d="M0 22L3.6 0L0-3L-3.6 0Z" fill="#23394a"/></g>'+
+        '<circle r="3.4" fill="url(#dsCB)" stroke="#3b2a0c" stroke-width=".5"/><circle r="40" fill="url(#dsCG)" pointer-events="none"/>'+
+        '<g class="ds-ccue"><path d="M0-50V-34" stroke="#2a1d07" stroke-width="1.3"/><path d="M.6-50L11-45.5L.6-41Z" fill="#f0d48e" stroke="#4d3812" stroke-width=".6"/><circle cy="-34" r="1.6" fill="#2a1d07"/><rect x="-6" y="-52" width="20" height="20" fill="transparent"/></g>';
+      return '<svg class="ds-cdial" viewBox="-51 -51 102 102" aria-hidden="true">'+g+'</svg>';
+    }
+    function chart(){
+      var N=n(),g='<rect width="'+W+'" height="'+H+'" fill="#e9dfc4"/><path d="M0 '+H*.78+' C 60 '+H*.7+', 90 '+H*.95+', 150 '+H*.86+' S 260 '+H+', 300 '+H*.88+' S 400 '+H*.72+', 420 '+H*.8+' V'+H+' H0Z" fill="#cdbf9a"/>'+
+        '<g stroke="#8a7a58" stroke-opacity=".35" fill="none"><path d="M0 '+H*.5+'H'+W+'"/>';
+      for(var k=1;k<8;k++)g+='<path d="M'+k*W/8+' 0V'+H+'"/>';g+='</g>';
+      var pts=[];for(var q=0;q<=N*4;q++)pts.push(mx(q/4).toFixed(1)+' '+my(q/4).toFixed(1));
+      g+='<path d="M'+pts.join(' L')+'" fill="none" stroke="#6b1f14" stroke-width="1" stroke-dasharray="3 2.5"/>';
+      st.marks.forEach(function(m){var X=mx(m.bar);g+='<circle cx="'+X+'" cy="'+my(m.bar)+'" r="3.2" fill="#a8261a" stroke="#fbeed0" stroke-width=".8"/><text x="'+(X+5)+'" y="'+H*.34+'" fill="#3b2a0c" font-family="Shippori Mincho B1,serif" font-weight="800" font-size="11"></text>';});
+      g+='<g class="ds-ccue2"><path d="M0 0V-16" stroke="#3b2a0c" stroke-width=".9"/><path d="M0-16l7 3-7 3z" fill="#c9a35b" stroke="#4d3812" stroke-width=".5"/></g>';
+      g+='<g class="ds-cship"><path d="M-6 3h12l-2 3h-8z" fill="#3b2a0c"/><path d="M0 3V-7" stroke="#3b2a0c" stroke-width=".8"/><path d="M0-6.5l5 4.5h-5z" fill="#fbeed0" stroke="#3b2a0c" stroke-width=".5"/></g>';
+      g+='<text x="'+(W-8)+'" y="12" text-anchor="end" font-family="Cormorant Garamond,serif" font-style="italic" font-weight="600" font-size="10" fill="#6b5a38">曲の海図</text>';
+      return '<svg class="ds-cmap" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">'+g+'</svg>';
+    }
+    function build(){
+      var inner=view==='map'?chart():'<span class="ds-cwin"><b class="ds-cb">1</b><small>小節</small><b class="ds-cbt">1</b><small>拍</small></span>'+dial()+'<span class="ds-clamps"></span>';
+      el.innerHTML='<span class="ds-cst" tabindex="0" role="slider" aria-label="再生の位置" aria-valuemin="0">'+inner+'</span><button type="button" class="ds-csw">'+(view==='map'?'再生の位置':'曲の地図')+'</button>';
+      if(view==='map'){var tx=el.querySelectorAll('.ds-cmap text');st.marks.forEach(function(m,i){if(tx[i])tx[i].textContent=m.name;});}   /* 名前は文字として入れる（記号がまぎれても崩れない） */
+      el.querySelector('.ds-csw').onclick=function(){view=view==='map'?'pos':'map';try{localStorage.setItem(KEY,view);}catch(e){}sfx('select');build();};
+      bind(el.querySelector('.ds-cst'));last={shape:last.shape};draw();
+    }
+    function q(c){return el.querySelector(c);}
+    function draw(){
+      var f=drag&&drag.k==='seek'?drag.f:toFb(now),cf=toFb(cue),i=Math.floor(f),nb=(st.bars[Math.min(n()-1,i)]||{}).nb||4,fr=f-i,bar=Math.min(n(),i+1),beat=Math.min(nb,Math.floor(fr*nb)+1);
+      if(last.f===f&&last.cf===cf)return;last.f=f;last.cf=cf;
+      var s=q('.ds-cst');if(s){s.setAttribute('aria-valuemax',Math.round(st.total));s.setAttribute('aria-valuenow',Math.round(toSec(f)));s.setAttribute('aria-valuetext',bar+'小節 '+beat+'拍');}
+      if(view==='map'){var sh=q('.ds-cship'),c2=q('.ds-ccue2');if(sh)sh.setAttribute('transform','translate('+mx(f).toFixed(2)+' '+(my(f)-9).toFixed(2)+')');if(c2)c2.setAttribute('transform','translate('+mx(cf).toFixed(2)+' '+my(cf).toFixed(2)+')');return;}
+      if(last.bar!==bar){q('.ds-cb').textContent=bar;last.bar=bar;}
+      if(last.beat!==beat||last.nb!==nb){q('.ds-cbt').textContent=beat;var L=q('.ds-clamps');if(L.children.length!==nb){L.innerHTML='';for(var k=0;k<nb;k++)L.appendChild(h('i'));}
+        Array.prototype.forEach.call(L.children,function(x,k){x.classList.toggle('ds-on',k+1===beat);});last.beat=beat;last.nb=nb;}
+      var a=ang(f),ca=ang(cf);q('.ds-cneedle').setAttribute('transform','rotate('+a.toFixed(2)+')');q('.ds-ccue').setAttribute('transform','rotate('+ca.toFixed(2)+')');
+      q('.ds-cdone').setAttribute('d',a-ca>1.5?arc(36.5,ca,Math.min(359.5,a)):'');
+    }
+    function fbAt(e,near){
+      if(view==='map'){var m=q('.ds-cmap'),r=m.getBoundingClientRect();return ((e.clientX-r.left)/r.width*W-mx(0))/(mx(n())-mx(0))*n();}
+      var d=q('.ds-cdial'),R=d.getBoundingClientRect(),a=Math.atan2(e.clientX-(R.left+R.width/2),-(e.clientY-(R.top+R.height/2)))*180/Math.PI;if(a<0)a+=360;
+      var f=a/360*n();if(near!=null){if(f-near>n()/2)f-=n();if(f-near<-n()/2)f+=n();}return f;
+    }
+    function clamp(f){return Math.max(0,Math.min(n()-1e-4,f));}
+    function bind(s){
+      s.addEventListener('pointerdown',function(e){
+        var onCue=e.target.closest('.ds-ccue'),onDial=e.target.closest('.ds-cdial')||e.target.closest('.ds-cmap');if(!onDial)return;
+        e.preventDefault();if(s.setPointerCapture)s.setPointerCapture(e.pointerId);
+        if(onCue){drag={k:'cue',f:toFb(cue)};return;}
+        drag={k:'seek',f:clamp(fbAt(e))};draw();if(o.onSeek)o.onSeek(toSec(drag.f),false);});
+      s.addEventListener('pointermove',function(e){if(!drag)return;var f=clamp(fbAt(e,drag.f));drag.f=f;
+        if(drag.k==='cue'){cue=toSec(f);draw();if(o.onCue)o.onCue(cue,false);}else{draw();if(o.onSeek)o.onSeek(toSec(f),false);}});
+      function up(){if(!drag)return;var d=drag;drag=null;if(d.k==='cue'){if(o.onCue)o.onCue(toSec(d.f),true);}else{now=toSec(d.f);if(o.onSeek)o.onSeek(now,true);}last={shape:last.shape};draw();}
+      s.addEventListener('pointerup',up);s.addEventListener('pointercancel',up);
+      s.addEventListener('keydown',function(e){var k=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(!k)return;e.preventDefault();
+        var f=clamp(Math.floor(toFb(now)+1e-6)+k);now=toSec(f);last={shape:last.shape};draw();if(o.onSeek)o.onSeek(now,true);});
+    }
+    build();
+    var api={
+      set:function(x){var k=JSON.stringify([x.bars,x.total,x.marks]);if(k===last.shape)return;st.bars=x.bars&&x.bars.length?x.bars:st.bars;st.total=x.total||st.total;st.marks=x.marks||[];build();last.shape=k;},
+      pos:function(t){if(drag&&drag.k==='seek')return;now=t;draw();},
+      cue:function(t){if(drag&&drag.k==='cue')return;cue=t;draw();},
+      view:function(v){if(v&&v!==view){view=v;build();}return view;}};
+    el._dsc2=api;return api;
+  }
   function init(root){
     var roots=root?[root]:Array.prototype.slice.call(document.querySelectorAll('.ds-ui'));
     roots.forEach(function(r){
-      if(r._dsr)return;r._dsr=1;if(soft(r))loadSoftFont();if(motif(r)==='studio')loadStudioFont();frame(r);
+      if(r._dsr)return;r._dsr=1;if(soft(r))loadSoftFont();if(motif(r)==='studio')loadStudioFont();if(motif(r)==='chart')loadChartFont();frame(r);
       r.querySelectorAll('.ds-sheet').forEach(function(s){sheet(s);});
       r.querySelectorAll('.ds-btn').forEach(button);
       r.querySelectorAll('.ds-choice').forEach(choice);
@@ -319,6 +420,6 @@
       if(r.getAttribute('data-ds-enter')!=='off')enter(r);
     });
   }
-  DS.ui={version:'1.2',bridge:bridge,init:init,toast:toast,sheet:sheet,choice:choice,tempo:tempo,slider:slider,list:list,label:label,enter:enter,decode:decode,sound:sound,sfx:sfx,termOf:termOf};
+  DS.ui={version:'1.3',bridge:bridge,compass:compass,init:init,toast:toast,sheet:sheet,choice:choice,tempo:tempo,slider:slider,list:list,label:label,enter:enter,decode:decode,sound:sound,sfx:sfx,termOf:termOf};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){init();});else init();
 })();
