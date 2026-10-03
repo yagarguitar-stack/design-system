@@ -154,11 +154,17 @@
     /* 今まさに聞こえている時刻（音の器の時計で）。出力の遅れを差し引く */
     function heardNow(){
       if(!ctx) return 0;
+      var plain=ctx.currentTime-(ctx.outputLatency||ctx.baseLatency||0);
       if(ctx.getOutputTimestamp&&G.performance){
         var ts=ctx.getOutputTimestamp();
-        if(ts&&ts.contextTime>0) return ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+        if(ts&&ts.contextTime>0&&ts.performanceTime>0){
+          var v=ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+          /* 携帯のブラウザ（特に iPhone の Safari）は、ここで実際とかけ離れた時刻を返すことがある。
+             そのまま使うと描き換えが止まる（または先走る）ので、音の器の時計と0.25秒以上ずれたら信用しない */
+          if(isFinite(v)&&Math.abs(v-plain)<0.25) return v;
+        }
       }
-      return ctx.currentTime-(ctx.outputLatency||ctx.baseLatency||0);
+      return plain;
     }
     function frame(){
       raf=0; if(!running) return;
