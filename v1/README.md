@@ -49,6 +49,8 @@ DS.sound.play('piano','C4',{dur:1});                 // 1音。音名は 'C4'・
 DS.sound.chord('acoustic',['E2','B2','E3','G#3','B3','E4']);   // 和音。ギターは自動で少しずらしてストローク
 DS.sound.chord('electric',[...],{up:true});          // 上から弾き下ろす（アップストローク）
 DS.sound.drum('kick');                               // kick／snare／rim／hihat／hihat-open／crash／ride／tom-high／tom-low
+DS.sound.drum('hihat-pedal');                        // 追加の音（初めて鳴らした時に読み込む）：hihat-pedal／crash2／china／splash／ride-bell／tom-mid／tom-mid-low／tom-floor／clap／cowbell／tambourine
+DS.sound.load('drums-extra');                        // 追加の音を先に読み込んでおく（任意）
 DS.sound.click(true);                                // メトロノームの電子音。true で1拍目の高い音
 DS.sound.play('bass','E1',{time:DS.sound.now()+0.5,vel:0.6});  // 鳴らす時刻と強さ（0〜1）
 DS.sound.volume(0.6);                                // 全体の音量

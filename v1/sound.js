@@ -5,11 +5,16 @@
      DS.sound.load('acoustic').then(function(){ DS.sound.chord('acoustic',['E2','B2','E3','G#3','B3','E4']); });
      DS.sound.play('piano','C4',{dur:1});
      DS.sound.drum('kick');  DS.sound.click(true);
+   ドラムの追加の音（hihat-pedal・crash2 など11音）は、初めて鳴らした時に読み込む。先に読むなら DS.sound.load('drums-extra')
 */
 (function(){
   var DS=window.DS=window.DS||{};
   var BASE=(function(){var s=document.currentScript&&document.currentScript.src;return s?s.replace(/[^\/]*$/,'')+'sounds/':'sounds/';})();
   var MAP={"acoustic":[40,43,46,49,52,55,58,61,64,68,71,74,77,80,83],"electric":[40,42,45,48,51,54,57,60,63,66,69,72,75,78,81,84],"piano":[23,27,31,35,38,41,45,48,52,55,58,62,65,69,72,76,79,82,85,88,91,94,97,100,103,106],"bass":[24,30,36,42,48,54,60,66,69],"drums":["kick","rim","snare","hihat","hihat-open","crash","ride","tom-high","tom-low"],"nylon":[40,43,46,49,52,55,58,61,64,67,70,73,76,79,82,85,88]};
+  /* ドラムの追加の音（使う時だけ読み込む。置き場所は drums フォルダ） */
+  var DRUM_EXTRA=["hihat-pedal","crash2","china","splash","ride-bell","tom-mid","tom-mid-low","tom-floor","clap","cowbell","tambourine"];
+  function list(inst){return inst==='drums-extra'?DRUM_EXTRA:MAP[inst];}
+  function folder(inst){return inst==='drums-extra'?'drums':inst;}
   /* 録音ごとの音程のずれ（セント）。鳴らす時に打ち消して、A=440Hz の正確な音程にそろえる */
   var TUNE={"acoustic":{"40":-18.1,"43":-7.7,"46":-7.6,"49":-10.4,"52":-8.7,"55":-8.7,"58":-12.7,"61":-11.4,"64":-15.4,"68":-11.7,"71":-12.7,"74":-13.8,"77":-12.3,"80":-13.6,"83":-15.4},"electric":{"40":-2.8,"42":-13.0,"45":-5.7,"48":-9.9,"51":-0.9,"54":1.9,"57":-3.2,"60":-1.2,"63":-1.6,"66":3.8,"69":-2.5,"72":-3.7,"75":2.6,"78":1.7,"81":1.0,"84":-2.1},"piano":{"41":-7.8,"45":-6.2,"48":3.5,"52":0.5,"55":2.7,"58":0.8,"62":3.6,"65":5.0,"69":3.6,"72":3.9,"76":4.1,"79":6.0,"82":5.8,"85":5.9,"88":10.8,"91":8.4,"94":11.8,"97":12.0,"100":21.0,"103":35.9,"106":32.9,"23":-12.4,"27":-9.7,"31":-5.5,"35":-6.6,"38":-1.6},"bass":{"24":4.1,"30":1.6,"36":10.8,"42":8.5,"48":7.6,"54":5.3,"60":1.1,"66":5.4,"69":3.4},"nylon":{"40":1.1,"43":10.1,"46":6.7,"49":4.9,"52":6.0,"55":5.5,"58":5.2,"61":10.3,"64":4.2,"67":7.0,"70":5.7,"73":7.4,"76":6.0,"79":6.1,"82":6.3,"85":8.8,"88":10.8}};
   /* 1音ずつの音量の補正。鳴り始め0.3秒の大きさを全楽器・全音でそろえてある */
@@ -48,16 +53,16 @@
   function load(inst){
     if(Array.isArray(inst))return Promise.all(inst.map(load));
     if(inst==='click')return Promise.resolve();
-    if(!MAP[inst])return Promise.reject(new Error('楽器の名前が違います：'+inst));
+    if(!list(inst))return Promise.reject(new Error('楽器の名前が違います：'+inst));
     if(loading[inst])return loading[inst];
     bank[inst]={};
-    loading[inst]=Promise.all(MAP[inst].map(function(k){
-      return fetch(BASE+inst+'/'+k+'.mp3').then(function(r){if(!r.ok)throw new Error('音が読み込めません：'+inst+'/'+k);return r.arrayBuffer();})
+    loading[inst]=Promise.all(list(inst).map(function(k){
+      return fetch(BASE+folder(inst)+'/'+k+'.mp3').then(function(r){if(!r.ok)throw new Error('音が読み込めません：'+inst+'/'+k);return r.arrayBuffer();})
         .then(decode).then(function(b){bank[inst][k]={buf:b,off:lead(b)};});
     })).then(function(){return inst;});
     return loading[inst];
   }
-  function isReady(inst){return !!(bank[inst]&&MAP[inst]&&Object.keys(bank[inst]).length===MAP[inst].length);}
+  function isReady(inst){var L=list(inst);return !!(bank[inst]&&L&&L.every(function(k){return bank[inst][k];}));}
 
   var PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
   /* 音名 → 番号（C4＝真ん中のド＝60）。60・'C4'・'F#3'・'Bb2' に加えて 'F♯4'・'E♭3'・'C##4'・'B𝄫3' も読む。theory.js があればそちらに任せる */
@@ -94,12 +99,17 @@
     var t0=opt.time==null?ac().currentTime:opt.time;
     return list.map(function(n,i){var o={};for(var k in opt)o[k]=opt[k];o.time=t0+i*gap;return play(inst,n,o);});
   }
-  /* ドラム：kick／snare／rim／hihat／hihat-open／crash／ride／tom-high／tom-low */
+  /* ドラム：kick／snare／rim／hihat／hihat-open／crash／ride／tom-high／tom-low
+     追加の音：hihat-pedal（ハイハットのフット）／crash2／china／splash／ride-bell（ライドのカップ）／
+               tom-mid／tom-mid-low／tom-floor（いちばん低いフロアタム）／clap／cowbell／tambourine
+     タムは高い順に tom-high → tom-mid → tom-mid-low → tom-low → tom-floor */
   function drum(name,opt){
     opt=opt||{};
-    if(!isReady('drums')){var o={stop:function(){}};load('drums').then(function(){var v=drum(name,opt);o.stop=v.stop;});return o;}
+    var set=DRUM_EXTRA.indexOf(name)>=0?'drums-extra':'drums';
+    if(set==='drums'&&MAP.drums.indexOf(name)<0)throw new Error('ドラムの名前が違います：'+name);
+    if(!isReady(set)){var o={stop:function(){}};load(set).then(function(){var v=drum(name,opt);o.stop=v.stop;});return o;}
     var k=name;if(k==='hihat'&&bank.drums.hihat2){k=(hatTurn++%2)?'hihat2':'hihat';}
-    var e=bank.drums[k];if(!e)throw new Error('ドラムの名前が違います：'+name);
+    var e=bank[set][k];if(!e)throw new Error('ドラムの名前が違います：'+name);
     return voice(e.buf,e.off,1,opt);
   }
   /* クリック音（電子音）：accent=true で1拍目の高い音 */
@@ -134,7 +144,7 @@
     uiLoad(n).then(function(b){var s=c.createBufferSource(),g=c.createGain();g.gain.value=opt.vol==null?uiVol:opt.vol;s.buffer=b;s.connect(g);g.connect(opt.dest||out);s.start(opt.time||0);}).catch(function(){});}
   function uiPreload(){Object.keys(UI_NAMES).forEach(function(n){uiLoad(n).catch(function(){});});}
   DS.sound={
-    instruments:Object.keys(MAP),names:NAMES,
+    instruments:Object.keys(MAP),names:NAMES,drumNames:MAP.drums.concat(DRUM_EXTRA),
     ui:ui,uiPreload:uiPreload,
     use:use,load:load,isReady:isReady,credits:credits,creditsHtml:creditsHtml,play:play,chord:chord,drum:drum,click:click,midi:midi,
     now:function(){return ac().currentTime;},
